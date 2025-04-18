@@ -31,7 +31,7 @@
     "id": "21",
     "description": "<p><em>(A video tutorial for the following steps is also available<br /> <a href='https://www.youtube.com/watch?v=_e8pgw9d7S4'>here</a>)</em></p> <p>Transfer <a href='https://github.com/commandblockguy/CEleste/releases/latest/download/CEleste.8xp'>CELESTE.8xp</a><br /> and the <a href='https://tiny.cc/clibs'>C Libraries</a> to the calculator using TI Connect CE<br /> or TiLP. Then, select prgmCELESTE from the program menu and press enter.<br /> If this results in an error, <a href='https://yvantt.github.io/arTIfiCE/'>arTIfiCE</a> is<br /> required for your OS version.</p> <p>Use the arrow keys to move, 2nd to jump and alpha to dash. To exit the game, press<br /> the clear key to save your progress, or del to exit without saving.</p> <p>A practice mode for speedrunning can be accessed by pressing the graph key from<br /> the title screen. In this mode, the time for the current room is displayed in white, and<br /> your best time for the room (in frames) is displayed in yellow. After completing a room,<br /> you will restart on the same level. To move to the previous level, press y=; to move to<br /> the next, press graph. You can also press window to toggle the HUD, and zoom to toggle<br /> gemskip mode.</p> ",
     "author": "commandblockguy",
-    "image": "https://i.imgur.com/JmXLTMB.png",
+    "image": "https://imgur.com/download/ODxemrM/",
     "link": "/games/index.html?id=21",
     "download": "https://github.com/commandblockguy/CEleste/releases/download/v1.2/CELESTE.8xp"
   },
