@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>MIDI to Wire‑Delay Converter</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.js"></script>
+  <style>
+    body { font: 16px sans-serif; margin: 2em; }
+    #drop { padding: 40px; border: 2px dashed #888; text-align: center; margin-bottom: 1em; }
+    #results pre { background: #f4f4f4; padding: 1em; }
+  </style>
+</head>
+<body>
+  <h1>MIDI → Wire‑Delay Converter</h1>
+  <div id="drop">🎵 Drop a MIDI file here</div>
+  <div id="results"></div>
+
+  <script>
+    // Paint note map
+    const paints = [
+      { note: "E3", paint: "Turquoise" }, { note: "F3", paint: "Dark Purple" },
+      { note: "F#3", paint: "Gray" }, { note: "G3", paint: "Blurple" },
+      { note: "G#3", paint: "Green" }, { note: "A3", paint: "Black" },
+      { note: "A#3", paint: "Light Olive" }, { note: "B3", paint: "White" },
+      { note: "C4", paint: "Light Mocha" }, { note: "C#4", paint: "Dark Red" },
+      { note: "D4", paint: "Red" }, { note: "D#4", paint: "Mocha" },
+      { note: "E4", paint: "Orange" }, { note: "F4", paint: "Light Brown" },
+      { note: "F#4", paint: "Light Yellow" }, { note: "G4", paint: "Light Teal" },
+      { note: "G#4", paint: "Olive" }, { note: "A4", paint: "Dark Green" },
+      { note: "A#4", paint: "Cyan" }, { note: "B4", paint: "Dark Blue" },
+      { note: "C5", paint: "Light Blue" }, { note: "C#5", paint: "Blue" },
+      { note: "D5", paint: "Purple" }, { note: "D#5", paint: "Dark Gray" },
+      { note: "E5", paint: "Brown" }, { note: "F5", paint: "Lavender" },
+      { note: "F#5", paint: "Dark Brown" }, { note: "G5", paint: "Orchid" },
+      { note: "G#5", paint: "Teal" }, { note: "A5", paint: "Pink" },
+      { note: "A#5", paint: "Periwinkle" }, { note: "B5", paint: "Yellow" },
+      { note: "C6", paint: "Light Orange" }, { note: "C#6", paint: "Light Green" },
+      { note: "D6", paint: "Purple" }
+    ];
+
+    // parse drag-drop
+    const drop = document.getElementById('drop');
+    const out = document.getElementById('results');
+    drop.addEventListener('dragover', e => { e.preventDefault(); });
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      new Tone.Midi(file).then(processMidi);
+    });
+
+    // Process MIDI
+    function processMidi(midi) {
+      const events = midi.tracks.flatMap(track => 
+        track.notes.map(n => ({ time: n.time, name: n.name }))
+      ).sort((a, b) => a.time - b.time);
+
+      let lastTime = 0;
+      const lines = events.map(ev => {
+        const delta = ev.time - lastTime;
+        const wireSpaces = Math.round(delta * midi.header.ppq); // approximate
+        const breakdown = breakdownDelay(wireSpaces);
+        lastTime = ev.time;
+
+        const paint = findClosestPaint(ev.name);
+        return `Note: ${ev.name} → ${paint} | Delay: ${wireSpaces} wire spaces → ` +
+               `${breakdown.big} Big, ${breakdown.small} Small, ${breakdown.tiny} Tiny`;
+      });
+
+      out.innerHTML = `<h2>Converted Plan</h2><pre>${lines.join('\n')}</pre>`;
+    }
+
+    // Find nearest note from paints
+    function findClosestPaint(noteName) {
+      let best = paints[0], bestDist = 1e9;
+      for (const p of paints) {
+        const d = lev(noteName, p.note);
+        if (d < bestDist) { bestDist = d; best = p; }
+      }
+      return best.paint;
+    }
+
+    // Levenshtein for closeness
+    function lev(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          dp[i][j] = a[i-1] === b[j-1]
+            ? dp[i-1][j-1]
+            : Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+1);
+        }
+      }
+      return dp[m][n];
+    }
+
+    // Convert wire spaces to blocks
+    function breakdownDelay(ws) {
+      const big = Math.floor(ws / 200);
+      ws %= 200;
+      const small = Math.floor(ws / 20);
+      ws %= 20;
+      const tiny = Math.floor(ws / 2);
+      const wire = ws % 2;
+      return { big, small, tiny, wire };
+    }
+  </script>
+</body>
+</html>
