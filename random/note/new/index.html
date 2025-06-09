@@ -6,39 +6,37 @@
   <title>MIDI Note Mapper</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f0f0f3;
+      font-family: sans-serif;
+      background: #f4f4f8;
       padding: 2em;
-      color: #333;
     }
-    input[type="file"], select {
+    input, select {
       margin: 1em 0;
       font-size: 1rem;
     }
     progress {
       width: 100%;
       height: 20px;
-      margin-top: 1em;
     }
     .note-box {
-      padding: 0.5em;
       background: white;
-      margin: 0.3em 0;
-      border-left: 5px solid #555;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 0.5em;
+      margin: 0.4em 0;
+      border-left: 4px solid #888;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
   </style>
 </head>
 <body>
   <h1>MIDI Note Mapper</h1>
   <input type="file" id="midiFile" accept=".mid"/>
-  <br/>
-  <label for="trackSelect">Select Track:</label>
+  <label for="trackSelect">Track:</label>
   <select id="trackSelect"></select>
   <progress id="progress" value="0" max="100" hidden></progress>
   <div id="output"></div>
 
-  <script src="https://unpkg.com/tone@15.1.22/build/Tone.js"></script>
+  <!-- Correct MIDI library -->
+  <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
   <script>
     const delayChart = {
       "Big Pulse Delay": 200,
@@ -64,12 +62,7 @@
       "C#6": "Light Green / Lime Green", "Db6": "Light Green / Lime Green", "D6": "Glowing Purple"
     };
 
-    function midiNoteToName(note) {
-      const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-      const name = notes[note % 12];
-      const octave = Math.floor(note / 12) - 1;
-      return name + octave;
-    }
+    const midiNoteToName = n => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][n % 12] + (Math.floor(n / 12) - 1);
 
     document.getElementById("midiFile").addEventListener("change", async (event) => {
       const file = event.target.files[0];
@@ -104,7 +97,7 @@
       notes.forEach((note, i) => {
         const name = midiNoteToName(note.midi);
         const mapped = noteChart[name] || "Unknown";
-        const delay = Math.round(note.time * 1000); // ms approximation
+        const delay = Math.round(note.time * 1000); // approx ms
         const delayBlocks = convertDelay(delay);
         output.innerHTML += `<div class="note-box"><strong>${mapped}</strong> (${name})<br>Delay: ${delayBlocks.join(", ")}</div>`;
         progress.value = (i / notes.length) * 100;
