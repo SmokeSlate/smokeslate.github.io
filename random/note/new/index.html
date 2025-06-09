@@ -2,47 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MIDI Note Mapper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MIDI Note Mapper with Export</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
       background: #f4f4f8;
       padding: 2em;
+      max-width: 700px;
+      margin: auto;
     }
-    input, select {
+    input, select, button {
       margin: 1em 0;
       font-size: 1rem;
+      padding: 0.5em 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #eee;
     }
     progress {
       width: 100%;
       height: 20px;
+      margin: 1em 0;
     }
     .note-box {
       background: white;
-      padding: 0.5em;
+      padding: 0.8em 1em;
       margin: 0.4em 0;
-      border-left: 4px solid #888;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      border-left: 6px solid #888;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 5px;
     }
+    .delay-blocks {
+      margin-top: 0.4em;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .delay-block {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      user-select: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .Wire { background: #555; }
+    .Tiny { background: #007bff; }
+    .Small { background: #17a2b8; }
+    .Big { background: #6610f2; }
   </style>
 </head>
 <body>
-  <h1>MIDI Note Mapper</h1>
-  <input type="file" id="midiFile" accept=".mid"/>
+  <h1>MIDI Note Mapper with Export</h1>
+  <input type="file" id="midiFile" accept=".mid" />
+  <br />
   <label for="trackSelect">Track:</label>
   <select id="trackSelect"></select>
+  <br />
   <progress id="progress" value="0" max="100" hidden></progress>
   <div id="output"></div>
+  <button id="exportBtn" disabled>Export Mapped Notes as JSON</button>
 
-  <!-- Correct MIDI library -->
   <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
   <script>
+    // Delay blocks map (with friendly names for icons/classes)
     const delayChart = {
-      "Big Pulse Delay": 200,
-      "Small Pulse Delay": 20,
-      "Tiny Pulse Delay": 2,
-      "Wire": 1,
+      Big: 200,
+      Small: 20,
+      Tiny: 2,
+      Wire: 1,
     };
 
     const noteChart = {
@@ -63,6 +101,8 @@
     };
 
     const midiNoteToName = n => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][n % 12] + (Math.floor(n / 12) - 1);
+
+    let currentMappedNotes = [];
 
     document.getElementById("midiFile").addEventListener("change", async (event) => {
       const file = event.target.files[0];
@@ -89,37 +129,92 @@
     function processTrack(track) {
       const output = document.getElementById("output");
       const progress = document.getElementById("progress");
+      const exportBtn = document.getElementById("exportBtn");
       output.innerHTML = "";
       progress.hidden = false;
       progress.value = 0;
+      currentMappedNotes = [];
 
       const notes = track.notes;
       notes.forEach((note, i) => {
         const name = midiNoteToName(note.midi);
         const mapped = noteChart[name] || "Unknown";
-        const delay = Math.round(note.time * 1000); // approx ms
-        const delayBlocks = convertDelay(delay);
-        output.innerHTML += `<div class="note-box"><strong>${mapped}</strong> (${name})<br>Delay: ${delayBlocks.join(", ")}</div>`;
+        // Delay in ms approximation
+        const delayMs = note.time * 1000;
+        const delayBlocks = convertDelay(delayMs);
+
+        currentMappedNotes.push({
+          noteName: name,
+          mappedName: mapped,
+          delayMs: Math.round(delayMs),
+          delayBlocks: delayBlocks
+        });
+
+        const noteDiv = document.createElement("div");
+        noteDiv.className = "note-box";
+        noteDiv.innerHTML = `<strong>${mapped}</strong> (${name})<br>Delay: `;
+        const delayContainer = document.createElement("div");
+        delayContainer.className = "delay-blocks";
+
+        delayBlocks.forEach(block => {
+          const blockDiv = document.createElement("div");
+          blockDiv.className = "delay-block " + block;
+          // Use icons / letters for clarity:
+          switch(block) {
+            case "Big": blockDiv.textContent = "🟪"; break;
+            case "Small": blockDiv.textContent = "🟦"; break;
+            case "Tiny": blockDiv.textContent = "🟩"; break;
+            case "Wire": blockDiv.textContent = "⬛"; break;
+            default: blockDiv.textContent = "?"; break;
+          }
+          blockDiv.title = block + " Pulse Delay";
+          delayContainer.appendChild(blockDiv);
+        });
+
+        noteDiv.appendChild(delayContainer);
+        output.appendChild(noteDiv);
+
         progress.value = (i / notes.length) * 100;
       });
 
       progress.hidden = true;
+      exportBtn.disabled = currentMappedNotes.length === 0;
     }
 
     function convertDelay(ms) {
-      let remaining = Math.max(1, Math.round(ms / 10));
+      // Convert ms to delay units (approximation)
+      // Use 10ms = 1 unit for example:
+      let units = Math.max(1, Math.round(ms / 10));
       const blocks = [];
 
-      for (const [type, value] of Object.entries(delayChart).sort((a, b) => b[1] - a[1])) {
-        while (remaining >= value) {
-          blocks.push(type);
-          remaining -= value;
+      // Sort descending by value
+      const entries = Object.entries(delayChart).sort((a,b) => b[1] - a[1]);
+
+      for (const [key, val] of entries) {
+        while (units >= val) {
+          blocks.push(key);
+          units -= val;
         }
       }
 
-      if (remaining > 0) blocks.push("Wire");
+      if (units > 0) blocks.push("Wire"); // remainder
+
       return blocks;
     }
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      if (currentMappedNotes.length === 0) return;
+      const dataStr = JSON.stringify(currentMappedNotes, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "mapped_notes.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
   </script>
 </body>
 </html>
