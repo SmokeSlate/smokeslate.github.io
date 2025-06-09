@@ -1,220 +1,452 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MIDI Note Mapper with Export</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-      background: #f4f4f8;
-      padding: 2em;
-      max-width: 700px;
-      margin: auto;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MIDI Note Delay BPM Converter</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    margin: 1em;
+    background: #f0f4f8;
+    color: #222;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 0.2em;
+  }
+  input[type="file"] {
+    display: block;
+    margin: 1em auto;
+  }
+  select, input[type=number] {
+    margin: 0.5em 0 1em 0;
+    font-size: 1em;
+    padding: 0.3em;
+    width: 100%;
+    max-width: 300px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .progress-bar {
+    width: 100%;
+    max-width: 400px;
+    background: #ccc;
+    height: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1em auto;
+  }
+  .progress-bar > div {
+    background: #4a90e2;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .notes-container {
+    max-width: 600px;
+    margin: 1em auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.12);
+    padding: 1em;
+  }
+  .note-item {
+    border-bottom: 1px solid #ddd;
+    padding: 0.5em 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+  }
+  .note-item:last-child {
+    border-bottom: none;
+  }
+  .delay-icons {
+    font-size: 1.4rem;
+    margin-right: 1em;
+    white-space: nowrap;
+  }
+  .delay-info {
+    color: #555;
+    font-size: 0.9rem;
+    min-width: 120px;
+    text-align: right;
+  }
+  button {
+    display: block;
+    margin: 1em auto 2em auto;
+    font-size: 1rem;
+    padding: 0.6em 1.2em;
+    border: none;
+    background: #4a90e2;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #3b78c1;
+  }
+  label {
+    font-weight: 600;
+    display: block;
+    max-width: 300px;
+    margin: 0.5em auto 0.3em auto;
+  }
+  @media (max-width: 480px) {
+    .note-item {
+      flex-direction: column;
+      align-items: flex-start;
     }
-    input, select, button {
-      margin: 1em 0;
-      font-size: 1rem;
-      padding: 0.5em 1em;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      cursor: pointer;
+    .delay-info {
+      text-align: left;
+      margin-top: 0.2em;
+      min-width: auto;
     }
-    button:hover {
-      background: #eee;
-    }
-    progress {
-      width: 100%;
-      height: 20px;
-      margin: 1em 0;
-    }
-    .note-box {
-      background: white;
-      padding: 0.8em 1em;
-      margin: 0.4em 0;
-      border-left: 6px solid #888;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      border-radius: 5px;
-    }
-    .delay-blocks {
-      margin-top: 0.4em;
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .delay-block {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 26px;
-      height: 26px;
-      border-radius: 5px;
-      font-size: 16px;
-      font-weight: bold;
-      color: white;
-      user-select: none;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    .Wire { background: #555; }
-    .Tiny { background: #007bff; }
-    .Small { background: #17a2b8; }
-    .Big { background: #6610f2; }
-  </style>
+  }
+</style>
 </head>
 <body>
-  <h1>MIDI Note Mapper with Export</h1>
-  <input type="file" id="midiFile" accept=".mid" />
-  <br />
-  <label for="trackSelect">Track:</label>
-  <select id="trackSelect"></select>
-  <br />
-  <progress id="progress" value="0" max="100" hidden></progress>
-  <div id="output"></div>
-  <button id="exportBtn" disabled>Export Mapped Notes as JSON</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
-  <script>
-    // Delay blocks map (with friendly names for icons/classes)
-    const delayChart = {
-      Big: 200,
-      Small: 20,
-      Tiny: 2,
-      Wire: 1,
-    };
+<h1>MIDI Note Delay & BPM Converter</h1>
 
-    const noteChart = {
-      "E3": "Turquoise", "F3": "Dark Purple", "F#3": "Gray", "Gb3": "Gray", "G3": "Blurple",
-      "G#3": "Green (formerly Pickle)", "Ab3": "Green (formerly Pickle)", "A3": "Black",
-      "A#3": "Light Olive", "Bb3": "Light Olive", "B3": "White (Glowing Red)", "C4": "Light Mocha",
-      "C#4": "Dark Red", "Db4": "Dark Red", "D4": "Red (Glowing Yellow)", "D#4": "Mocha",
-      "Eb4": "Mocha", "E4": "Orange (Glowing Orange)", "F4": "Light Brown",
-      "F#4": "Light Yellow (Glowing Green)", "Gb4": "Light Yellow (Glowing Green)", "G4": "Light Teal",
-      "G#4": "Olive", "Ab4": "Olive", "A4": "Dark Green (Glowing Cyan)", "A#4": "Cyan",
-      "Bb4": "Cyan", "B4": "Dark Blue (Glowing Red / Pink)", "C5": "Light Blue",
-      "C#5": "Blue", "Db5": "Blue", "D5": "Purple (Glowing Yellow / Purple)", "D#5": "Dark Gray",
-      "Eb5": "Dark Gray", "E5": "Brown (Glowing Orange)", "F5": "Lavender",
-      "F#5": "Dark Brown (Glowing Green)", "Gb5": "Dark Brown (Glowing Green)", "G5": "Orchid",
-      "G#5": "Teal", "Ab5": "Teal", "A5": "Pink (Glowing Cyan)", "A#5": "Periwinkle",
-      "Bb5": "Periwinkle", "B5": "Yellow (Glowing Pink)", "C6": "Light Orange / Macaroni",
-      "C#6": "Light Green / Lime Green", "Db6": "Light Green / Lime Green", "D6": "Glowing Purple"
-    };
+<label for="fileInput">Select MIDI file (.mid):</label>
+<input type="file" id="fileInput" accept=".mid,.midi" />
 
-    const midiNoteToName = n => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][n % 12] + (Math.floor(n / 12) - 1);
+<label for="trackSelect">Select Track:</label>
+<select id="trackSelect" disabled><option>Load a MIDI file first</option></select>
 
-    let currentMappedNotes = [];
+<label for="baseTempoInput">Base Tempo (Sixteenth notes BPM at 1 space delay):</label>
+<input type="number" id="baseTempoInput" min="1" max="5000" step="1" value="1200" />
 
-    document.getElementById("midiFile").addEventListener("change", async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
+<div class="progress-bar" id="progressBar" style="display:none;">
+  <div></div>
+</div>
 
-      const reader = new FileReader();
-      reader.onload = async function () {
-        const midi = new Midi(reader.result);
-        const trackSelect = document.getElementById("trackSelect");
-        trackSelect.innerHTML = "";
-        midi.tracks.forEach((track, i) => {
-          const opt = document.createElement("option");
-          opt.value = i;
-          opt.textContent = track.name || `Track ${i + 1}`;
-          trackSelect.appendChild(opt);
-        });
+<div class="notes-container" id="notesContainer"></div>
 
-        trackSelect.onchange = () => processTrack(midi.tracks[trackSelect.value]);
-        processTrack(midi.tracks[0]);
-      };
-      reader.readAsArrayBuffer(file);
+<button id="exportBtn" style="display:none;">Export Notes as JSON</button>
+
+<script src="https://cdn.jsdelivr.net/npm/midiconvert@1.1.3/build/MidiConvert.min.js"></script>
+
+<script>
+// Your note chart JSON with notes (simplified for demo)
+const noteChart = [
+  {"paint":"Turquoise","note":"E3","tech":"Fantasy","web":300,"butt":100,"stuffing":""},
+  {"paint":"Dark Purple","note":"F3","tech":"Fantasy","web":300,"butt":100,"stuffing":""},
+  {"paint":"Gray","note":"F#3","tech":"Research","web":300,"butt":100,"stuffing":""},
+  {"paint":"Blurple","note":"G3","tech":"Snow","web":300,"butt":100,"stuffing":""},
+  {"paint":"Green (formerly Pickle)","note":"G#3","tech":"Fantasy","web":300,"butt":100,"stuffing":""},
+  {"paint":"Black","note":"A3","tech":"Suburbs","web":100,"butt":100,"stuffing":""},
+  {"paint":"Light Olive","note":"A#3","tech":"Ocean","web":300,"butt":100,"stuffing":""},
+  {"paint":"White (Glowing Red)","note":"B3","tech":"Snow","web":300,"butt":100,"stuffing":""},
+  {"paint":"Light Mocha","note":"C4","tech":"Ocean","web":300,"butt":100,"stuffing":""},
+  {"paint":"Dark Red","note":"C#4","tech":"Suburbs","web":100,"butt":100,"stuffing":""},
+  {"paint":"Red (Glowing Yellow)","note":"D4","tech":"Suburbs","web":100,"butt":300,"stuffing":""},
+  {"paint":"Mocha","note":"D#4","tech":"Ocean","web":300,"butt":100,"stuffing":""},
+  {"paint":"Orange (Glowing Orange)","note":"E4","tech":"Suburbs","web":100,"butt":300,"stuffing":""},
+  {"paint":"Light Brown","note":"F4","tech":"Suburbs","web":100,"butt":100,"stuffing":""},
+  {"paint":"Light Yellow (Glowing Green)","note":"F#4","tech":"Suburbs","web":100,"butt":100,"stuffing":""},
+  {"paint":"Light Teal","note":"G4","tech":"Snow","web":300,"butt":100,"stuffing":""},
+  {"paint":"Olive","note":"G#4","tech":"Ocean","web":300,"butt":100,"stuffing":""},
+  {"paint":"Dark Green (Glowing Cyan)","note":"A4","tech":"Suburbs","web":100,"butt":800,"stuffing":""},
+  {"paint":"Cyan","note":"A#4","tech":"Snow","web":300,"butt":100,"stuffing":""},
+  {"paint":"Dark Blue (Glowing Red / Pink)","note":"B4","tech":"Suburbs","web":100,"butt":800,"stuffing":""},
+  {"paint":"Light Blue","note":"C5","tech":"Snow","web":300,"butt":100,"stuffing":""},
+  {"paint":"Blue","note":"C#5","tech":"Ocean","web":300,"butt":100,"stuffing":""},
+  {"paint":"Purple (Glowing Yellow / Purple)","note":"D5","tech":"Suburbs","web":100,"butt":300,"stuffing":""},
+  {"paint":"Dark Gray","note":"D#5","tech":"Research","web":300,"butt":100,"stuffing":""},
+  {"paint":"Brown (Glowing Orange)","note":"E5","tech":"Suburbs","web":100,"butt":300,"stuffing":""},
+  {"paint":"Lavender","note":"F5","tech":"Ocean","web":300,"butt":100,"stuffing":""},
+  {"paint":"Dark Brown (Glowing Green)","note":"F#5","tech":"Suburbs","web":100,"butt":300,"stuffing":""},
+  {"paint":"Orchid","note":"G5","tech":"Ocean","web":300,"butt":100,"stuffing":""},
+  {"paint":"Teal","note":"G#5","tech":"Fantasy","web":300,"butt":100,"stuffing":""},
+  {"paint":"Pink (Glowing Cyan)","note":"A5","tech":"Snow","web":300,"butt":800,"stuffing":""},
+  {"paint":"Periwinkle","note":"A#5","tech":"Fantasy","web":300,"butt":100,"stuffing":""},
+  {"paint":"Yellow (Glowing Pink)","note":"B5","tech":"Ocean","web":300,"butt":800,"stuffing":""},
+  {"paint":"Light Orange / Macaroni","note":"C6","tech":"Unreleased","web":0,"butt":0,"stuffing":""},
+  {"paint":"Light Green / Lime Green","note":"C#6","tech":"Unreleased","web":0,"butt":0,"stuffing":""},
+  {"paint":"Glowing Purple","note":"D6","tech":"Fantasy","web":800,"butt":100,"stuffing":""}
+];
+
+// Delay icons
+const icons = {
+  wire: "⬛",
+  tiny: "🟦",
+  small: "🟪",
+  big: "🟫"
+};
+
+// Delay block sizes (units of wire blocks)
+const delayBlocks = {
+  wire: 1,
+  tiny: 2,
+  small: 20,
+  big: 200
+};
+
+// BPM Map from spaces count (delay blocks count of wire units)
+const bpmMap = {
+  1: 1200,
+  2: 600,
+  3: 400,
+  4: 300,
+  5: 240,
+  6: 200,
+  7: 171,
+  8: 150,
+  9: 133
+};
+
+// Helper: find closest bpm for spaces count
+function getBPMFromSpaces(spaces) {
+  if (spaces <= 0) return 0;
+  return bpmMap[spaces] || 133; // cap at 133 bpm
+}
+
+// Parse MIDI file and populate tracks
+const fileInput = document.getElementById("fileInput");
+const trackSelect = document.getElementById("trackSelect");
+const notesContainer = document.getElementById("notesContainer");
+const progressBar = document.getElementById("progressBar");
+const progressBarFill = progressBar.firstElementChild;
+const exportBtn = document.getElementById("exportBtn");
+const baseTempoInput = document.getElementById("baseTempoInput");
+
+let midiData = null;
+let currentTrackNotes = [];
+let selectedTrackIndex = 0;
+
+fileInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  resetUI();
+
+  const arrayBuffer = await file.arrayBuffer();
+
+  try {
+    progressBar.style.display = "block";
+    progressBarFill.style.width = "10%";
+    midiData = await MidiConvert.parse(arrayBuffer);
+    progressBarFill.style.width = "60%";
+
+    trackSelect.innerHTML = "";
+    midiData.tracks.forEach((track, i) => {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = track.name || `Track ${i + 1} (${track.notes.length} notes)`;
+      trackSelect.appendChild(option);
     });
+    trackSelect.disabled = false;
+    progressBarFill.style.width = "100%";
 
-    function processTrack(track) {
-      const output = document.getElementById("output");
-      const progress = document.getElementById("progress");
-      const exportBtn = document.getElementById("exportBtn");
-      output.innerHTML = "";
-      progress.hidden = false;
-      progress.value = 0;
-      currentMappedNotes = [];
+    // Automatically select first track and render notes
+    selectedTrackIndex = 0;
+    trackSelect.value = 0;
+    renderNotesForTrack(0);
+  } catch (err) {
+    alert("Error parsing MIDI file: " + err.message);
+    progressBar.style.display = "none";
+  }
+  setTimeout(() => {
+    progressBar.style.display = "none";
+  }, 400);
+});
 
-      const notes = track.notes;
-      notes.forEach((note, i) => {
-        const name = midiNoteToName(note.midi);
-        const mapped = noteChart[name] || "Unknown";
-        // Delay in ms approximation
-        const delayMs = note.time * 1000;
-        const delayBlocks = convertDelay(delayMs);
+trackSelect.addEventListener("change", (e) => {
+  selectedTrackIndex = Number(e.target.value);
+  renderNotesForTrack(selectedTrackIndex);
+});
 
-        currentMappedNotes.push({
-          noteName: name,
-          mappedName: mapped,
-          delayMs: Math.round(delayMs),
-          delayBlocks: delayBlocks
-        });
+baseTempoInput.addEventListener("change", () => {
+  renderNotesForTrack(selectedTrackIndex);
+});
 
-        const noteDiv = document.createElement("div");
-        noteDiv.className = "note-box";
-        noteDiv.innerHTML = `<strong>${mapped}</strong> (${name})<br>Delay: `;
-        const delayContainer = document.createElement("div");
-        delayContainer.className = "delay-blocks";
+function resetUI() {
+  notesContainer.innerHTML = "";
+  trackSelect.innerHTML = '<option>Load a MIDI file first</option>';
+  trackSelect.disabled = true;
+  exportBtn.style.display = "none";
+  progressBar.style.display = "none";
+  currentTrackNotes = [];
+}
 
-        delayBlocks.forEach(block => {
-          const blockDiv = document.createElement("div");
-          blockDiv.className = "delay-block " + block;
-          // Use icons / letters for clarity:
-          switch(block) {
-            case "Big": blockDiv.textContent = "🟪"; break;
-            case "Small": blockDiv.textContent = "🟦"; break;
-            case "Tiny": blockDiv.textContent = "🟩"; break;
-            case "Wire": blockDiv.textContent = "⬛"; break;
-            default: blockDiv.textContent = "?"; break;
-          }
-          blockDiv.title = block + " Pulse Delay";
-          delayContainer.appendChild(blockDiv);
-        });
+// Convert MIDI note number to note string with octave (e.g., C#4)
+function midiNoteNumberToNoteName(num) {
+  const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const octave = Math.floor(num / 12) - 1;
+  return notes[num % 12] + octave;
+}
 
-        noteDiv.appendChild(delayContainer);
-        output.appendChild(noteDiv);
+// Find closest note from your note chart
+function findClosestNoteName(midiNoteStr) {
+  // midiNoteStr like "C#4"
+  // Simple distance = difference of midi numbers
+  const targetMidiNum = noteNameToMidiNumber(midiNoteStr);
 
-        progress.value = (i / notes.length) * 100;
-      });
-
-      progress.hidden = true;
-      exportBtn.disabled = currentMappedNotes.length === 0;
+  let closest = null;
+  let minDiff = 1000;
+  for (const n of noteChart) {
+    const chartNum = noteNameToMidiNumber(n.note);
+    const diff = Math.abs(chartNum - targetMidiNum);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = n;
     }
+  }
+  return closest;
+}
 
-    function convertDelay(ms) {
-      // Convert ms to delay units (approximation)
-      // Use 10ms = 1 unit for example:
-      let units = Math.max(1, Math.round(ms / 10));
-      const blocks = [];
+// Converts note string to MIDI note number
+function noteNameToMidiNumber(noteStr) {
+  const noteRegex = /^([A-G])(#|b)?(\d+)$/;
+  const m = noteStr.match(noteRegex);
+  if (!m) return null;
+  const [_, letter, accidental, octaveStr] = m;
+  const octave = parseInt(octaveStr, 10);
 
-      // Sort descending by value
-      const entries = Object.entries(delayChart).sort((a,b) => b[1] - a[1]);
+  const baseNotes = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  let noteNum = baseNotes[letter];
+  if (accidental === "#") noteNum += 1;
+  else if (accidental === "b") noteNum -= 1;
+  return noteNum + (octave + 1) * 12;
+}
 
-      for (const [key, val] of entries) {
-        while (units >= val) {
-          blocks.push(key);
-          units -= val;
-        }
-      }
+// Calculate delay blocks count from delta time (ticks) and tempo
+// Here: Assume delay is count of wire units (each wire=1 block)
+// For demo, map delayTicks to spaces by quantizing roughly
+function calculateDelaySpaces(delayTicks, ticksPerBeat, tempoBPM) {
+  // Convert delayTicks to time in seconds
+  const beatDurationSec = 60 / tempoBPM;
+  const tickDurationSec = beatDurationSec / ticksPerBeat;
+  const delaySeconds = delayTicks * tickDurationSec;
 
-      if (units > 0) blocks.push("Wire"); // remainder
+  // For simplicity, count spaces as integer blocks by delaySeconds * some scale
+  // We'll just quantize so each 1 space = 0.05s for demo
+  const approxSpaceDuration = 0.05;
+  const spaces = Math.max(1, Math.round(delaySeconds / approxSpaceDuration));
+  return spaces;
+}
 
-      return blocks;
+function delayBlocksToIcons(spaces) {
+  // Use your delay chart with wire=1 space:
+  // Break down spaces into big, small, tiny, wire blocks as best fit
+  // Greedy algorithm from biggest to smallest
+  let remaining = spaces;
+  const blocks = [];
+
+  while (remaining > 0) {
+    if (remaining >= delayBlocks.big) {
+      blocks.push("big");
+      remaining -= delayBlocks.big;
+    } else if (remaining >= delayBlocks.small) {
+      blocks.push("small");
+      remaining -= delayBlocks.small;
+    } else if (remaining >= delayBlocks.tiny) {
+      blocks.push("tiny");
+      remaining -= delayBlocks.tiny;
+    } else {
+      blocks.push("wire");
+      remaining -= delayBlocks.wire;
     }
+  }
 
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      if (currentMappedNotes.length === 0) return;
-      const dataStr = JSON.stringify(currentMappedNotes, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "mapped_notes.json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+  return blocks.map((b) => icons[b]).join(" ");
+}
+
+function renderNotesForTrack(trackIndex) {
+  notesContainer.innerHTML = "";
+  exportBtn.style.display = "none";
+
+  if (!midiData) return;
+
+  const track = midiData.tracks[trackIndex];
+  if (!track || !track.notes.length) {
+    notesContainer.textContent = "No notes in this track.";
+    return;
+  }
+
+  // Get tempo from input or use default 1200 bpm (sixteenth notes)
+  const baseTempo = Number(baseTempoInput.value) || 1200;
+  const ticksPerBeat = midiData.header.ticksPerBeat || 480;
+  let lastTick = 0;
+
+  // Build array of displayed notes info
+  const notesInfo = [];
+
+  track.notes.forEach((note, i) => {
+    const midiNoteStr = midiNoteNumberToNoteName(note.midi);
+    const closestNote = findClosestNoteName(midiNoteStr);
+
+    // Delay between this note and previous note in ticks
+    let delayTicks = i === 0 ? 0 : note.ticks - lastTick;
+    lastTick = note.ticks;
+
+    // Calculate spaces count from delay
+    const spaces = calculateDelaySpaces(delayTicks, ticksPerBeat, baseTempo);
+
+    // Get BPM from spaces count
+    const bpm = getBPMFromSpaces(spaces);
+
+    // Delay icons
+    const delayIcons = delayBlocksToIcons(spaces);
+
+    notesInfo.push({
+      midiNoteStr,
+      paint: closestNote.paint,
+      note: closestNote.note,
+      delayIcons,
+      spaces,
+      bpm
     });
-  </script>
+  });
+
+  // Render each note
+  for (const info of notesInfo) {
+    const div = document.createElement("div");
+    div.className = "note-item";
+
+    const left = document.createElement("div");
+    left.innerHTML = `<strong>${info.midiNoteStr}</strong> (${info.paint})`;
+
+    const center = document.createElement("div");
+    center.className = "delay-icons";
+    center.textContent = info.delayIcons;
+
+    const right = document.createElement("div");
+    right.className = "delay-info";
+    right.textContent = `Delay: ${info.spaces} spaces | ~${info.bpm} BPM`;
+
+    div.appendChild(left);
+    div.appendChild(center);
+    div.appendChild(right);
+
+    notesContainer.appendChild(div);
+  }
+
+  currentTrackNotes = notesInfo;
+  exportBtn.style.display = "block";
+}
+
+// Export notes JSON
+exportBtn.addEventListener("click", () => {
+  const jsonStr = JSON.stringify(currentTrackNotes, null, 2);
+  const blob = new Blob([jsonStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `notes_track${selectedTrackIndex + 1}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+});
+</script>
+
 </body>
 </html>
