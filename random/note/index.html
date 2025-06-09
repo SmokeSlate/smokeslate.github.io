@@ -18,36 +18,294 @@
     <script>
         // List of notes with their associated labels
         const notesWithLabels = [
-            { note: "F#3", label: "Gray" },
-            { note: "G3", label: "Blue" },
-            { note: "G#3", label: "N/A" },
-            { note: "A4", label: "Black" },
-            { note: "A#4", label: "Light Olive" },
-            { note: "B4", label: "White (Glowing Red)" },
-            { note: "C4", label: "Light Mocha" },
-            { note: "C#4", label: "Dark Red" },
-            { note: "D4", label: "Red (Glowing Yellow)" },
-            { note: "D#4", label: "Mocha" },
-            { note: "E4", label: "Orange (Glowing Orange)" },
-            { note: "F4", label: "Light Brown" },
-            { note: "F#4", label: "Light Yellow (Glowing Green)" },
-            { note: "G4", label: "Light Teal" },
-            { note: "G#4", label: "Olive" },
-            { note: "A5", label: "Dark Green (Glowing Cyan)" },
-            { note: "A#5", label: "Cyan" },
-            { note: "B5", label: "Dark Blue (Glowing Red / Pink)" },
-            { note: "C5", label: "Light Blue" },
-            { note: "C#5", label: "Blurple" },
-            { note: "D5", label: "Purple (Glowing Yellow)" },
-            { note: "D#5", label: "Dark Gray" },
-            { note: "E5", label: "Brown (Glowing Orange)" },
-            { note: "F5", label: "Lavender" },
-            { note: "F#5", label: "Dark Brown (Glowing Green)" },
-            { note: "G5", label: "Orchid" },
-            { note: "A6", label: "Pink (Glowing Cyan)" },
-            { note: "B6", label: "Yellow (Glowing Pink)" },
-            { note: "C#6", label: "(Lime?)" }
-        ];
+  {
+    "name": "Turquoise",
+    "note": "E3",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#025E4C"
+  },
+  {
+    "name": "Dark Purple",
+    "note": "F3",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#292A3A"
+  },
+  {
+    "name": "Gray",
+    "note": "F#3",
+    "source": "Research",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#BDBFC5"
+  },
+  {
+    "name": "Blurple",
+    "note": "G3",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#3164AF"
+  },
+  {
+    "name": "Green",
+    "note": "G#3",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#167325"
+  },
+  {
+    "name": "Black",
+    "note": "A3",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#121212"
+  },
+  {
+    "name": "Light Olive",
+    "note": "A#3",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#679C43"
+  },
+  {
+    "name": "White",
+    "note": "B3",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#FFFFFF",
+    "glow": ["#FF4655"]
+  },
+  {
+    "name": "Light Mocha",
+    "note": "C4",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#A26550"
+  },
+  {
+    "name": "Dark Red",
+    "note": "C#4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#54393C"
+  },
+  {
+    "name": "Red",
+    "note": "D4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#DF5454",
+    "glow": ["#FFFEFA"]
+  },
+  {
+    "name": "Mocha",
+    "note": "D#4",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#89462E"
+  },
+  {
+    "name": "Orange",
+    "note": "E4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#DF6F54",
+    "glow": ["#FFB45A"]
+  },
+  {
+    "name": "Light Brown",
+    "note": "F4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#B79C91"
+  },
+  {
+    "name": "Light Yellow",
+    "note": "F#4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#F6C68D",
+    "glow": ["#AFFD9D"]
+  },
+  {
+    "name": "Light Teal",
+    "note": "G4",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#5DC9A0"
+  },
+  {
+    "name": "Olive",
+    "note": "G#4",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#44682B"
+  },
+  {
+    "name": "Dark Green",
+    "note": "A4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#2D594F",
+    "glow": ["#00FFFF"]
+  },
+  {
+    "name": "Cyan",
+    "note": "A#4",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#5DC6CA"
+  },
+  {
+    "name": "Dark Blue",
+    "note": "B4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#576077",
+    "glow": ["#FF4655", "#FFADFF"]
+  },
+  {
+    "name": "Light Blue",
+    "note": "C5",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#82BADF"
+  },
+  {
+    "name": "Blue",
+    "note": "C#5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#5D6BBD"
+  },
+  {
+    "name": "Purple",
+    "note": "D5",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#735FB0",
+    "glow": ["#FFFEFA", "#D567FF"]
+  },
+  {
+    "name": "Dark Gray",
+    "note": "D#5",
+    "source": "Research",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#7F8185"
+  },
+  {
+    "name": "Brown",
+    "note": "E5",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#91776B",
+    "glow": ["#FFB45A"]
+  },
+  {
+    "name": "Lavender",
+    "note": "F5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#927FDE"
+  },
+  {
+    "name": "Dark Brown",
+    "note": "F#5",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#423732",
+    "glow": ["#AFFD9D"]
+  },
+  {
+    "name": "Orchid",
+    "note": "G5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#D377C4"
+  },
+  {
+    "name": "Teal",
+    "note": "G#5",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#105F6B"
+  },
+  {
+    "name": "Pink",
+    "note": "A5",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#DA89AC",
+    "glow": ["#00FFFF"]
+  },
+  {
+    "name": "Periwinkle",
+    "note": "A#5",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#A192CE"
+  },
+  {
+    "name": "Yellow",
+    "note": "B5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#F7C332",
+    "glow": ["#FFADFF"]
+  },
+  {
+    "name": "Light Orange",
+    "note": "C6",
+    "source": "Unreleased",
+    "color": "#E09E54"
+  },
+  {
+    "name": "Light Green",
+    "note": "C#6",
+    "source": "Unreleased",
+    "color": "#83BB45"
+  },
+  {
+    "name": "Purple",
+    "note": "D6",
+    "source": "Fantasy",
+    "butt_coins": 800,
+    "stuffing": 100,
+    "color": "#D567FF"
+  }
+];
 
         // Function to validate note format
         function isValidNoteFormat(note) {
