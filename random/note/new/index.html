@@ -1,110 +1,131 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>MIDI to Wire‑Delay Converter</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MIDI Note Mapper</title>
   <style>
-    body { font: 16px sans-serif; margin: 2em; }
-    #drop { padding: 40px; border: 2px dashed #888; text-align: center; margin-bottom: 1em; }
-    #results pre { background: #f4f4f4; padding: 1em; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f0f3;
+      padding: 2em;
+      color: #333;
+    }
+    input[type="file"], select {
+      margin: 1em 0;
+      font-size: 1rem;
+    }
+    progress {
+      width: 100%;
+      height: 20px;
+      margin-top: 1em;
+    }
+    .note-box {
+      padding: 0.5em;
+      background: white;
+      margin: 0.3em 0;
+      border-left: 5px solid #555;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
-  <h1>MIDI → Wire‑Delay Converter</h1>
-  <div id="drop">🎵 Drop a MIDI file here</div>
-  <div id="results"></div>
+  <h1>MIDI Note Mapper</h1>
+  <input type="file" id="midiFile" accept=".mid"/>
+  <br/>
+  <label for="trackSelect">Select Track:</label>
+  <select id="trackSelect"></select>
+  <progress id="progress" value="0" max="100" hidden></progress>
+  <div id="output"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@next/build/Midi.js"></script>
   <script>
-    // Paint note map
-    const paints = [
-      { note: "E3", paint: "Turquoise" }, { note: "F3", paint: "Dark Purple" },
-      { note: "F#3", paint: "Gray" }, { note: "G3", paint: "Blurple" },
-      { note: "G#3", paint: "Green" }, { note: "A3", paint: "Black" },
-      { note: "A#3", paint: "Light Olive" }, { note: "B3", paint: "White" },
-      { note: "C4", paint: "Light Mocha" }, { note: "C#4", paint: "Dark Red" },
-      { note: "D4", paint: "Red" }, { note: "D#4", paint: "Mocha" },
-      { note: "E4", paint: "Orange" }, { note: "F4", paint: "Light Brown" },
-      { note: "F#4", paint: "Light Yellow" }, { note: "G4", paint: "Light Teal" },
-      { note: "G#4", paint: "Olive" }, { note: "A4", paint: "Dark Green" },
-      { note: "A#4", paint: "Cyan" }, { note: "B4", paint: "Dark Blue" },
-      { note: "C5", paint: "Light Blue" }, { note: "C#5", paint: "Blue" },
-      { note: "D5", paint: "Purple" }, { note: "D#5", paint: "Dark Gray" },
-      { note: "E5", paint: "Brown" }, { note: "F5", paint: "Lavender" },
-      { note: "F#5", paint: "Dark Brown" }, { note: "G5", paint: "Orchid" },
-      { note: "G#5", paint: "Teal" }, { note: "A5", paint: "Pink" },
-      { note: "A#5", paint: "Periwinkle" }, { note: "B5", paint: "Yellow" },
-      { note: "C6", paint: "Light Orange" }, { note: "C#6", paint: "Light Green" },
-      { note: "D6", paint: "Purple" }
-    ];
+    const delayChart = {
+      "Big Pulse Delay": 200,
+      "Small Pulse Delay": 20,
+      "Tiny Pulse Delay": 2,
+      "Wire": 1,
+    };
 
-    // parse drag-drop
-    const drop = document.getElementById('drop');
-    const out = document.getElementById('results');
-    drop.addEventListener('dragover', e => { e.preventDefault(); });
-    drop.addEventListener('drop', e => {
-      e.preventDefault();
-      const file = e.dataTransfer.files[0];
+    const noteChart = {
+      "E3": "Turquoise", "F3": "Dark Purple", "F#3": "Gray", "Gb3": "Gray", "G3": "Blurple",
+      "G#3": "Green (formerly Pickle)", "Ab3": "Green (formerly Pickle)", "A3": "Black",
+      "A#3": "Light Olive", "Bb3": "Light Olive", "B3": "White (Glowing Red)", "C4": "Light Mocha",
+      "C#4": "Dark Red", "Db4": "Dark Red", "D4": "Red (Glowing Yellow)", "D#4": "Mocha",
+      "Eb4": "Mocha", "E4": "Orange (Glowing Orange)", "F4": "Light Brown",
+      "F#4": "Light Yellow (Glowing Green)", "Gb4": "Light Yellow (Glowing Green)", "G4": "Light Teal",
+      "G#4": "Olive", "Ab4": "Olive", "A4": "Dark Green (Glowing Cyan)", "A#4": "Cyan",
+      "Bb4": "Cyan", "B4": "Dark Blue (Glowing Red / Pink)", "C5": "Light Blue",
+      "C#5": "Blue", "Db5": "Blue", "D5": "Purple (Glowing Yellow / Purple)", "D#5": "Dark Gray",
+      "Eb5": "Dark Gray", "E5": "Brown (Glowing Orange)", "F5": "Lavender",
+      "F#5": "Dark Brown (Glowing Green)", "Gb5": "Dark Brown (Glowing Green)", "G5": "Orchid",
+      "G#5": "Teal", "Ab5": "Teal", "A5": "Pink (Glowing Cyan)", "A#5": "Periwinkle",
+      "Bb5": "Periwinkle", "B5": "Yellow (Glowing Pink)", "C6": "Light Orange / Macaroni",
+      "C#6": "Light Green / Lime Green", "Db6": "Light Green / Lime Green", "D6": "Glowing Purple"
+    };
+
+    function midiNoteToName(note) {
+      const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      const name = notes[note % 12];
+      const octave = Math.floor(note / 12) - 1;
+      return name + octave;
+    }
+
+    document.getElementById("midiFile").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
       if (!file) return;
-      new Tone.Midi(file).then(processMidi);
+
+      const reader = new FileReader();
+      reader.onload = async function () {
+        const midi = new Midi(reader.result);
+        const trackSelect = document.getElementById("trackSelect");
+        trackSelect.innerHTML = "";
+        midi.tracks.forEach((track, i) => {
+          const opt = document.createElement("option");
+          opt.value = i;
+          opt.textContent = track.name || `Track ${i + 1}`;
+          trackSelect.appendChild(opt);
+        });
+
+        trackSelect.onchange = () => processTrack(midi.tracks[trackSelect.value]);
+        processTrack(midi.tracks[0]);
+      };
+      reader.readAsArrayBuffer(file);
     });
 
-    // Process MIDI
-    function processMidi(midi) {
-      const events = midi.tracks.flatMap(track => 
-        track.notes.map(n => ({ time: n.time, name: n.name }))
-      ).sort((a, b) => a.time - b.time);
+    function processTrack(track) {
+      const output = document.getElementById("output");
+      const progress = document.getElementById("progress");
+      output.innerHTML = "";
+      progress.hidden = false;
+      progress.value = 0;
 
-      let lastTime = 0;
-      const lines = events.map(ev => {
-        const delta = ev.time - lastTime;
-        const wireSpaces = Math.round(delta * midi.header.ppq); // approximate
-        const breakdown = breakdownDelay(wireSpaces);
-        lastTime = ev.time;
-
-        const paint = findClosestPaint(ev.name);
-        return `Note: ${ev.name} → ${paint} | Delay: ${wireSpaces} wire spaces → ` +
-               `${breakdown.big} Big, ${breakdown.small} Small, ${breakdown.tiny} Tiny`;
+      const notes = track.notes;
+      notes.forEach((note, i) => {
+        const name = midiNoteToName(note.midi);
+        const mapped = noteChart[name] || "Unknown";
+        const delay = Math.round(note.time * 1000); // ms approximation
+        const delayBlocks = convertDelay(delay);
+        output.innerHTML += `<div class="note-box"><strong>${mapped}</strong> (${name})<br>Delay: ${delayBlocks.join(", ")}</div>`;
+        progress.value = (i / notes.length) * 100;
       });
 
-      out.innerHTML = `<h2>Converted Plan</h2><pre>${lines.join('\n')}</pre>`;
+      progress.hidden = true;
     }
 
-    // Find nearest note from paints
-    function findClosestPaint(noteName) {
-      let best = paints[0], bestDist = 1e9;
-      for (const p of paints) {
-        const d = lev(noteName, p.note);
-        if (d < bestDist) { bestDist = d; best = p; }
-      }
-      return best.paint;
-    }
+    function convertDelay(ms) {
+      let remaining = Math.max(1, Math.round(ms / 10));
+      const blocks = [];
 
-    // Levenshtein for closeness
-    function lev(a, b) {
-      const m = a.length, n = b.length;
-      const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
-      for (let i = 0; i <= m; i++) dp[i][0] = i;
-      for (let j = 0; j <= n; j++) dp[0][j] = j;
-      for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-          dp[i][j] = a[i-1] === b[j-1]
-            ? dp[i-1][j-1]
-            : Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+1);
+      for (const [type, value] of Object.entries(delayChart).sort((a, b) => b[1] - a[1])) {
+        while (remaining >= value) {
+          blocks.push(type);
+          remaining -= value;
         }
       }
-      return dp[m][n];
-    }
 
-    // Convert wire spaces to blocks
-    function breakdownDelay(ws) {
-      const big = Math.floor(ws / 200);
-      ws %= 200;
-      const small = Math.floor(ws / 20);
-      ws %= 20;
-      const tiny = Math.floor(ws / 2);
-      const wire = ws % 2;
-      return { big, small, tiny, wire };
+      if (remaining > 0) blocks.push("Wire");
+      return blocks;
     }
   </script>
 </body>
