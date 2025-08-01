@@ -1,74 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mod Downloader</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f5f5f5;
-        }
-        
-        .container {
-            text-align: center;
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        button:hover {
-            background-color: #0056b3;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        text-align: center;
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      ul {
+        text-align: left;
+        margin: 0 auto 20px auto;
+        max-width: 400px;
+        padding: 0;
+        list-style: inside disc;
+      }
+      .empty-list {
+        color: #888;
+        font-style: italic;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Mod Downloader</h1>
-        <p>Click the button to download all selected mods.</p>
-        <button id="downloadBtn">Download All</button>
+      <h1>Mod Downloader</h1>
+      <p>Click the button to download all selected mods.</p>
+      <div id="fileListContainer">
+        <ul id="fileList"></ul>
+      </div>
+      <button id="downloadBtn">Download All</button>
     </div>
 
     <script>
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            const queryString = window.location.search;
-            const urlParams = new URLSearchParams(queryString);
-            const inputUrls = urlParams.get('input');
+      function getUrlsFromQuery() {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const inputUrls = urlParams.get("input");
+        if (!inputUrls) return [];
+        return inputUrls
+          .split(",")
+          .map((url) => url.trim())
+          .filter((url) => url.length > 0);
+      }
 
-            if (inputUrls) {
-                const urls = inputUrls.split(',').map(url => url.trim()).filter(url => url);
-
-                if (urls.length > 0) {
-                    urls.forEach(url => {
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = '';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    });
-                } else {
-                    alert('No valid URLs found.');
-                }
-            } else {
-                alert('No mods selected');
-            }
+      function renderFileList(urls) {
+        const fileList = document.getElementById("fileList");
+        fileList.innerHTML = "";
+        if (urls.length === 0) {
+          fileList.innerHTML = '<li class="empty-list">No mods selected.</li>';
+          return;
+        }
+        urls.forEach((url) => {
+          const fileName = url.split("/").pop() || url;
+          const li = document.createElement("li");
+          // Add a direct download link for each file
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "";
+          a.textContent = fileName;
+          a.title = url;
+          li.appendChild(a);
+          fileList.appendChild(li);
         });
+      }
+
+      // Helper to pause between downloads
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function downloadAll(urls) {
+        for (const url of urls) {
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          await sleep(2000); // 2s delay between downloads
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const urls = getUrlsFromQuery();
+        renderFileList(urls);
+
+        document
+          .getElementById("downloadBtn")
+          .addEventListener("click", async function () {
+            if (urls.length === 0) {
+              alert("No mods selected");
+              return;
+            }
+            await downloadAll(urls);
+          });
+      });
     </script>
-</body>
+  </body>
 </html>
