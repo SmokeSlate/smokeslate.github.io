@@ -109,26 +109,40 @@ function buildAction(){
   po.repeating_context=repeat;
   inner.play_options={player_options_override:po};
 
+  // pad inner Base64
   function encB64(x){return btoa(JSON.stringify(x))}
   inner.feedback_details._=inner.feedback_details._||"";
   let newB64=encB64(inner);
   while(newB64.length<L0){inner.feedback_details._+="x";newB64=encB64(inner);}
   if(newB64.length>L0){
-    inner.feedback_details._=inner.feedback_details._.slice(0,Math.max(0,
-      inner.feedback_details._.length-(newB64.length-L0)));
+    inner.feedback_details._=inner.feedback_details._.slice(0,
+      Math.max(0,inner.feedback_details._.length-(newB64.length-L0)));
     newB64=encB64(inner);
   }
 
+  // replace inner Base64
   outer.set(enc.encode(newB64),s);
+
+  // --- Patch visible title label (keep same byte length) ---
+  const titleBytes=enc.encode(title);
+  const donorTitle=enc.encode("Liked Songs");
+  const tIdx=outer.findIndex((_,i)=>donorTitle.every((v,j)=>outer[i+j]===v));
+  if(tIdx!==-1){
+    const targetLen=donorTitle.length;
+    const newTitle=titleBytes.length>targetLen
+      ? titleBytes.slice(0,targetLen)
+      : new Uint8Array([...titleBytes,...Array(targetLen-titleBytes.length).fill(0x20)]);
+    outer.set(newTitle,tIdx);
+  }
+
   obj.WFWorkflowActionParameters.IntentData.__value__=b64e(outer);
 
   const out=JSON.stringify(obj,null,2);
   document.getElementById("output").value=out;
   navigator.clipboard.writeText(out).catch(()=>{});
-  
-  // === auto-launch Shortcuts ===
-  const j=[obj];
-  const payload=encodeURIComponent('{"actions":'+JSON.stringify(j)+'}');
+
+  // === Auto-launch Shortcuts ===
+  const payload=encodeURIComponent('{"actions":['+JSON.stringify(obj)+']}');
   location.href='shortcuts://run-shortcut?name=Action%20Editor&input='+payload;
 }
 
