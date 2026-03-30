@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Closest Musical Note Finder</title>
+</head>
+<body>
+    <div id="formContainer">
+        <h1>Find the Closest Musical Note</h1>
+        <form id="noteForm">
+            <label for="noteInput">Enter a musical note (e.g., F#3, A4):</label>
+            <input type="text" id="noteInput" name="noteInput" required>
+            <button type="submit">Find Closest Note</button>
+        </form>
+    </div>
+
+    <h2>Result: <span id="result"></span></h2>
+
+    <script>
+        // List of notes with their associated labels
+        const notesWithLabels = [
+  {
+    "name": "Turquoise",
+    "note": "E3",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#025E4C"
+  },
+  {
+    "name": "Dark Purple",
+    "note": "F3",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#292A3A"
+  },
+  {
+    "name": "Gray",
+    "note": "F#3",
+    "source": "Research",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#BDBFC5"
+  },
+  {
+    "name": "Blurple",
+    "note": "G3",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#3164AF"
+  },
+  {
+    "name": "Green",
+    "note": "G#3",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#167325"
+  },
+  {
+    "name": "Black",
+    "note": "A3",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#121212"
+  },
+  {
+    "name": "Light Olive",
+    "note": "A#3",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#679C43"
+  },
+  {
+    "name": "White",
+    "note": "B3",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#FFFFFF",
+    "glow": ["#FF4655"]
+  },
+  {
+    "name": "Light Mocha",
+    "note": "C4",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#A26550"
+  },
+  {
+    "name": "Dark Red",
+    "note": "C#4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#54393C"
+  },
+  {
+    "name": "Red",
+    "note": "D4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#DF5454",
+    "glow": ["#FFFEFA"]
+  },
+  {
+    "name": "Mocha",
+    "note": "D#4",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#89462E"
+  },
+  {
+    "name": "Orange",
+    "note": "E4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#DF6F54",
+    "glow": ["#FFB45A"]
+  },
+  {
+    "name": "Light Brown",
+    "note": "F4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#B79C91"
+  },
+  {
+    "name": "Light Yellow",
+    "note": "F#4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#F6C68D",
+    "glow": ["#AFFD9D"]
+  },
+  {
+    "name": "Light Teal",
+    "note": "G4",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#5DC9A0"
+  },
+  {
+    "name": "Olive",
+    "note": "G#4",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#44682B"
+  },
+  {
+    "name": "Dark Green",
+    "note": "A4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#2D594F",
+    "glow": ["#00FFFF"]
+  },
+  {
+    "name": "Cyan",
+    "note": "A#4",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#5DC6CA"
+  },
+  {
+    "name": "Dark Blue",
+    "note": "B4",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#576077",
+    "glow": ["#FF4655", "#FFADFF"]
+  },
+  {
+    "name": "Light Blue",
+    "note": "C5",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#82BADF"
+  },
+  {
+    "name": "Blue",
+    "note": "C#5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#5D6BBD"
+  },
+  {
+    "name": "Purple",
+    "note": "D5",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#735FB0",
+    "glow": ["#FFFEFA", "#D567FF"]
+  },
+  {
+    "name": "Dark Gray",
+    "note": "D#5",
+    "source": "Research",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#7F8185"
+  },
+  {
+    "name": "Brown",
+    "note": "E5",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#91776B",
+    "glow": ["#FFB45A"]
+  },
+  {
+    "name": "Lavender",
+    "note": "F5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#927FDE"
+  },
+  {
+    "name": "Dark Brown",
+    "note": "F#5",
+    "source": "Suburbs",
+    "butt_coins": 100,
+    "stuffing": 100,
+    "color": "#423732",
+    "glow": ["#AFFD9D"]
+  },
+  {
+    "name": "Orchid",
+    "note": "G5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#D377C4"
+  },
+  {
+    "name": "Teal",
+    "note": "G#5",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#105F6B"
+  },
+  {
+    "name": "Pink",
+    "note": "A5",
+    "source": "Snow",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#DA89AC",
+    "glow": ["#00FFFF"]
+  },
+  {
+    "name": "Periwinkle",
+    "note": "A#5",
+    "source": "Fantasy",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#A192CE"
+  },
+  {
+    "name": "Yellow",
+    "note": "B5",
+    "source": "Ocean",
+    "butt_coins": 300,
+    "stuffing": 100,
+    "color": "#F7C332",
+    "glow": ["#FFADFF"]
+  },
+  {
+    "name": "Light Orange",
+    "note": "C6",
+    "source": "Unreleased",
+    "color": "#E09E54"
+  },
+  {
+    "name": "Light Green",
+    "note": "C#6",
+    "source": "Unreleased",
+    "color": "#83BB45"
+  },
+  {
+    "name": "Purple",
+    "note": "D6",
+    "source": "Fantasy",
+    "butt_coins": 800,
+    "stuffing": 100,
+    "color": "#D567FF"
+  }
+];
+
+        // Function to validate note format
+        function isValidNoteFormat(note) {
+            const notePattern = /^[A-G](#|b)?[0-8]$/;
+            return notePattern.test(note);
+        }
+
+        // Function to find the closest match and return the result with label
+        function findClosestNote(inputNote) {
+            if (!isValidNoteFormat(inputNote)) {
+                return "Invalid note format";
+            }
+
+            let closestNote = null;
+            let closestDistance = Infinity;
+
+            notesWithLabels.forEach(({ note, label }) => {
+                let distance = calculateDistance(note, inputNote);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestNote = { note, label };
+                }
+            });
+
+            return closestNote 
+                ? `${closestNote.label} - ${closestNote.note}`
+                : "No close match found";
+        }
+
+        // Function to calculate a basic "distance" between two notes
+        function calculateDistance(note1, note2) {
+            let distance = 0;
+            for (let i = 0; i < Math.min(note1.length, note2.length); i++) {
+                if (note1[i] !== note2[i]) {
+                    distance++;
+                }
+            }
+            distance += Math.abs(note1.length - note2.length);
+            return distance;
+        }
+
+        // Get the query parameter from the URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Handle form submission
+        document.getElementById('noteForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const inputNote = document.getElementById('noteInput').value.trim();
+            const closestNote = findClosestNote(inputNote);
+
+            document.getElementById('result').textContent = closestNote;
+        });
+
+        // Check for the 'note' parameter in the URL
+        const noteParam = getQueryParam('note');
+        if (noteParam) {
+            // If the 'note' parameter is present, show only the result
+            const closestNote = findClosestNote(noteParam);
+            document.getElementById('result').textContent = closestNote;
+            document.getElementById('formContainer').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -9,8 +9,6 @@
       /* Theme colours */
       --primary: #007bff;
       --secondary: #17a2b8;
-      --success: #28a745;
-      --danger: #dc3545;
       --background: #f4f4f8;
       --surface: #ffffff;
       --text: #333333;
@@ -79,7 +77,7 @@
       transition: background 0.2s ease;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background: #0056b3;
     }
 
@@ -200,6 +198,7 @@
     <input type="file" id="midiFile" accept=".mid" />
     <label for="trackSelect">Track:</label>
     <select id="trackSelect"></select>
+    <button id="previewBtn" disabled>Preview Track</button>
   </div>
   <div id="bpmInfo">
     <strong>Delay Pattern:</strong> <span id="delayPattern"></span><br />
@@ -258,6 +257,15 @@
 
     let currentMappedNotes = [];
     let currentMidi = null;
+    let currentTrack = null;
+    let audioCtx = null;
+    // Arrays to keep track of scheduled oscillators and timeouts for play and preview
+    let scheduledOscs = [];
+    let scheduledTimeouts = [];
+    let previewOscs = [];
+    let previewTimeouts = [];
+    let playing = false;
+    let previewPlaying = false;
 
     const bpmInput = document.getElementById('bpmInput');
     const applyBpmBtn = document.getElementById('applyBpm');
@@ -270,6 +278,7 @@
     const playBtn = document.getElementById('playBtn');
     const exportBtn = document.getElementById('exportBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const previewBtn = document.getElementById('previewBtn');
     const outputDiv = document.getElementById('output');
 
     // Show optimal delay pattern for the chosen BPM
@@ -331,7 +340,12 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async () => {
-        currentMidi = new Midi(reader.result);
+        try {
+          currentMidi = new Midi(reader.result);
+        } catch(err) {
+          alert('Error parsing MIDI file');
+          return;
+        }
         // Populate track dropdown
         trackSelect.innerHTML = '';
         currentMidi.tracks.forEach((track, i) => {
@@ -342,7 +356,9 @@
         });
         // Auto-select first track
         trackSelect.selectedIndex = 0;
-        processTrack(currentMidi.tracks[0]);
+        currentTrack = currentMidi.tracks[0];
+        previewBtn.disabled = false;
+        processTrack(currentTrack);
       };
       reader.readAsArrayBuffer(file);
     });
@@ -350,24 +366,30 @@
     trackSelect.addEventListener('change', () => {
       if (currentMidi) {
         const idx = parseInt(trackSelect.value);
-        processTrack(currentMidi.tracks[idx]);
+        currentTrack = currentMidi.tracks[idx];
+        processTrack(currentTrack);
       }
     });
 
     function processTrack(track) {
       outputDiv.innerHTML = '';
       currentMappedNotes = [];
+      if (!track) return;
       const bpm = parseInt(bpmInput.value) || 120;
-      // Each note has a time property in seconds relative to start; convert to spaces
-      track.notes.forEach(note => {
+      // Duration of one sixteenth note
+      const beatDuration = 60000 / bpm; // quarter note in ms
+      const spaceDuration = beatDuration / 4; // sixteenth note in ms
+      // Sort notes by their start time to compute relative delays
+      const notes = track.notes.slice().sort((a, b) => a.time - b.time);
+      let lastTime = 0;
+      notes.forEach(note => {
         const name = midiNoteToName(note.midi);
         const mapped = noteChart[name] || 'Unknown';
-        const delayMs = note.time * 1000; // time relative to start in ms
-        // Convert to spaces: each space is a sixteenth note; duration of sixteenth = (60000/bpm)/4
-        const beatDuration = 60000 / bpm; // quarter note in ms
-        const spaceDuration = beatDuration / 4; // sixteenth note
-        const totalSpaces = Math.round((delayMs / spaceDuration));
-        currentMappedNotes.push({ midi: note.midi, name, mapped, delaySpaces: totalSpaces });
+        // Compute delay since last note start
+        const delta = note.time - lastTime;
+        const delaySpaces = Math.round((delta * 1000) / spaceDuration);
+        lastTime = note.time;
+        currentMappedNotes.push({ midi: note.midi, name, mapped, delaySpaces });
       });
       // Display notes
       currentMappedNotes.forEach(({ name, mapped, delaySpaces }) => {
@@ -376,7 +398,7 @@
         card.innerHTML = `<strong>${mapped}</strong> (${name})`;
         const delayContainer = document.createElement('div');
         delayContainer.className = 'delay-blocks';
-        // Convert total spaces into array of delay blocks (largest first)
+        // Convert delaySpaces to blocks
         let remaining = delaySpaces;
         const blockTypes = [
           { type: 'Big', value: delayChart.Big },
@@ -391,7 +413,6 @@
             remaining -= value;
           }
         }
-        // Add wires for any leftover
         while (remaining > 0) {
           blocks.push('Wire');
           remaining--;
@@ -399,7 +420,6 @@
         blocks.forEach(b => {
           const div = document.createElement('div');
           div.className = 'delay-block ' + b;
-          // Visual icons for each delay type
           div.textContent = b === 'Big' ? '🟪' : b === 'Small' ? '🟦' : b === 'Tiny' ? '🟩' : '⬛';
           div.title = b + ' Pulse Delay';
           delayContainer.appendChild(div);
@@ -413,28 +433,115 @@
       clearBtn.disabled = !hasNotes;
     }
 
+    function stopAllScheduled() {
+      // Stop play oscillators
+      scheduledOscs.forEach(({ osc, gain }) => {
+        try { osc.stop(); } catch(e) {}
+      });
+      scheduledOscs = [];
+      scheduledTimeouts.forEach(id => clearTimeout(id));
+      scheduledTimeouts = [];
+    }
+
+    function stopPreview() {
+      previewOscs.forEach(({ osc, gain }) => {
+        try { osc.stop(); } catch(e) {}
+      });
+      previewOscs = [];
+      previewTimeouts.forEach(id => clearTimeout(id));
+      previewTimeouts = [];
+      previewPlaying = false;
+      previewBtn.textContent = 'Preview Track';
+    }
+
+    // Playback mapping sequence
     playBtn.addEventListener('click', () => {
-      const bpm = parseInt(bpmInput.value) || 120;
-      const spaceMs = (60000 / bpm) / 4; // duration of one space in ms
       if (!currentMappedNotes.length) return;
-      if (!window.audioCtx) window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const ctx = window.audioCtx;
-      let startTime = ctx.currentTime;
-      let accumulatedTime = 0;
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (playing) {
+        // Pause/stop current playback
+        stopAllScheduled();
+        playing = false;
+        playBtn.textContent = 'Play';
+        return;
+      }
+      // If preview is playing, stop preview first
+      if (previewPlaying) stopPreview();
+      playing = true;
+      playBtn.textContent = 'Pause';
+      const bpm = parseInt(bpmInput.value) || 120;
+      const spaceMs = (60000 / bpm) / 4; // one space in ms
+      let startTime = audioCtx.currentTime;
+      let accumulator = 0;
       currentMappedNotes.forEach(note => {
-        accumulatedTime += (note.delaySpaces * spaceMs) / 1000;
-        const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
+        accumulator += (note.delaySpaces * spaceMs) / 1000;
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.value = 440 * Math.pow(2, (note.midi - 69) / 12);
         osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        // Fade out gently
-        gainNode.gain.setValueAtTime(0.3, startTime + accumulatedTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + accumulatedTime + 0.5);
-        osc.start(startTime + accumulatedTime);
-        osc.stop(startTime + accumulatedTime + 0.5);
+        gainNode.connect(audioCtx.destination);
+        gainNode.gain.setValueAtTime(0.3, startTime + accumulator);
+        // Fade out over 0.4 seconds
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + accumulator + 0.4);
+        osc.start(startTime + accumulator);
+        osc.stop(startTime + accumulator + 0.4);
+        scheduledOscs.push({ osc, gain: gainNode });
       });
+      // Schedule end-of-playback reset
+      const totalDuration = currentMappedNotes.reduce((sum, n) => sum + (n.delaySpaces * spaceMs) / 1000, 0) + 0.5;
+      const timeoutId = setTimeout(() => {
+        stopAllScheduled();
+        playing = false;
+        playBtn.textContent = 'Play';
+      }, totalDuration * 1000);
+      scheduledTimeouts.push(timeoutId);
+    });
+
+    // Preview selected track (plays track's notes with actual timing)
+    previewBtn.addEventListener('click', () => {
+      if (!currentTrack) return;
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      // If currently previewing, stop
+      if (previewPlaying) {
+        stopPreview();
+        return;
+      }
+      // Stop regular play if running
+      if (playing) {
+        stopAllScheduled();
+        playing = false;
+        playBtn.textContent = 'Play';
+      }
+      previewPlaying = true;
+      previewBtn.textContent = 'Stop Preview';
+      const now = audioCtx.currentTime + 0.1; // slight delay before starting
+      let endTime = 0;
+      currentTrack.notes.forEach(note => {
+        const start = now + note.time;
+        const duration = Math.max(note.duration, 0.1); // ensure minimal duration
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 440 * Math.pow(2, (note.midi - 69) / 12);
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        gainNode.gain.setValueAtTime(0.3, start);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.start(start);
+        osc.stop(start + duration);
+        previewOscs.push({ osc, gain: gainNode });
+        endTime = Math.max(endTime, note.time + duration);
+      });
+      // Schedule automatic stop
+      const tid = setTimeout(() => {
+        stopPreview();
+      }, (endTime + 0.5) * 1000);
+      previewTimeouts.push(tid);
     });
 
     exportBtn.addEventListener('click', () => {
@@ -457,6 +564,11 @@
       playBtn.disabled = true;
       exportBtn.disabled = true;
       clearBtn.disabled = true;
+      if (playing) {
+        stopAllScheduled();
+        playing = false;
+        playBtn.textContent = 'Play';
+      }
     });
 
     // Initialize BPM info with default

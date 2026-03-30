@@ -1,376 +1,1670 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Closest Musical Note Finder</title>
-</head>
-<body>
-    <div id="formContainer">
-        <h1>Find the Closest Musical Note</h1>
-        <form id="noteForm">
-            <label for="noteInput">Enter a musical note (e.g., F#3, A4):</label>
-            <input type="text" id="noteInput" name="noteInput" required>
-            <button type="submit">Find Closest Note</button>
-        </form>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MIDI Timeline Mapper with Chords (Yeeps)</title>
+    <style>
+      :root {
+        --primary: #007bff;
+        --secondary: #17a2b8;
+        --background: #f4f4f8;
+        --surface: #ffffff;
+        --text: #333333;
+        --border: #dddddd;
+        --danger: #ff3b30;
+        --muted: rgba(0, 0, 0, 0.06);
+        --muted2: rgba(0, 0, 0, 0.03);
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        background: var(--background);
+        color: var(--text);
+        margin: 0;
+        padding: 1rem;
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+      body.dark {
+        --background: #121212;
+        --surface: #1e1e1e;
+        --text: #e6e6e6;
+        --border: #333333;
+        --muted: rgba(255, 255, 255, 0.08);
+        --muted2: rgba(255, 255, 255, 0.04);
+      }
+      h1 {
+        margin: 0 0 0.75rem 0;
+        text-align: center;
+        font-size: 1.35rem;
+        letter-spacing: 0.2px;
+      }
+      .panel {
+        width: 100%;
+        margin: 0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.9rem;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        margin: 0.6rem 0;
+      }
+      label {
+        margin-right: 0.25rem;
+        font-weight: 600;
+        opacity: 0.9;
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        padding: 0.55rem 0.6rem;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        font-size: 1rem;
+        background: var(--surface);
+        color: var(--text);
+        outline: none;
+      }
+      input[type="file"] {
+        font-size: 1rem;
+        padding: 0.35rem;
+      }
+      button {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 0.55rem 0.95rem;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.05s ease, filter 0.2s ease, opacity 0.2s ease;
+        user-select: none;
+      }
+      button:active {
+        transform: translateY(1px);
+      }
+      button:hover:not(:disabled) {
+        filter: brightness(0.92);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.42rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--muted2);
+        font-size: 0.95rem;
+        white-space: nowrap;
+      }
+      .pill strong {
+        font-weight: 800;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        margin: 0.35rem 0 0.65rem 0;
+      }
+      .instrument-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        max-width: 920px;
+        margin: 0.35rem auto 0.65rem auto;
+      }
+      .instrument-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+        background: var(--muted2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.5rem 0.65rem;
+      }
+      .instrument-name {
+        flex: 1 1 180px;
+        min-width: 160px;
+      }
+      .mini-btn {
+        padding: 0.4rem 0.65rem;
+        font-size: 0.9rem;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        opacity: 0.9;
+        margin: 0.75rem 0;
+      }
+      /* ===== Timeline ===== */
+      .timeline-shell {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        background: linear-gradient(to bottom, var(--muted2), transparent);
+      }
+      .timeline-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.65rem;
+        padding: 0.65rem 0.65rem 0.55rem 0.65rem;
+        background: var(--muted2);
+        border-bottom: 1px solid var(--border);
+      }
+      .timeline-top .left,
+      .timeline-top .right {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+      }
+      .timeline {
+        position: relative;
+        height: calc(100vh - 280px);
+        min-height: 400px;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.05),
+          rgba(0, 0, 0, 0)
+        );
+      }
+      body.dark .timeline {
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.06),
+          rgba(255, 255, 255, 0)
+        );
+      }
+      .grid {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.55;
+        background-image: linear-gradient(
+            to right,
+            rgba(0, 0, 0, 0.1) 1px,
+            transparent 1px
+          ),
+          linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+        background-size: 48px 100%, 100% 44px;
+      }
+      body.dark .grid {
+        background-image: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.1) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.08) 1px,
+            transparent 1px
+          );
+      }
+      .lanes {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .lane {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--border);
+        opacity: 0.35;
+      }
+      .notes {
+        position: absolute;
+        inset: 0;
+      }
+      /* note tick */
+      .tick {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+      }
+      body.dark .tick {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .tick.selected {
+        outline: 3px solid rgba(0, 123, 255, 0.22);
+        outline-offset: 2px;
+        transform: translate(-50%, -50%) scale(1.06);
+      }
+      .delay-line {
+        position: absolute;
+        height: 2px;
+        transform: translateY(-50%);
+        opacity: 0.55;
+        border-radius: 999px;
+        pointer-events: none;
+      }
+      .playhead {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--danger);
+        transform: translateX(-1px);
+        pointer-events: none;
+        opacity: 0.95;
+        box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.12);
+      }
+
+      /* Hold bar showing note duration */
+      .hold-bar {
+        position: absolute;
+        height: 4px;
+        border-radius: 2px;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .tooltip {
+        position: absolute;
+        padding: 0.45rem 0.55rem;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 0.9rem;
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.14);
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -10px);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        white-space: nowrap;
+        z-index: 50;
+      }
+      .tooltip.show {
+        opacity: 1;
+        transform: translate(-50%, -16px);
+      }
+      /* ===== Bottom control strip ===== */
+      .timeline-bottom {
+        padding: 0.65rem;
+        border-top: 1px solid var(--border);
+        background: var(--muted2);
+      }
+      .range {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        align-items: center;
+        justify-content: center;
+        margin: 0.2rem 0 0.55rem 0;
+      }
+      input[type="range"] {
+        width: min(680px, 86vw);
+      }
+      .hint {
+        text-align: center;
+        opacity: 0.85;
+        font-size: 0.92rem;
+        margin-top: 0.45rem;
+      }
+      .kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        border: 1px solid var(--border);
+        border-bottom-width: 3px;
+        border-radius: 8px;
+        padding: 0.1rem 0.4rem;
+        background: var(--surface);
+        font-size: 0.88rem;
+      }
+    </style>
+  </head>
+  <body class="dark">
+    <h1>MIDI Timeline Mapper with Chords (Yeeps)</h1>
+    <div class="panel">
+      <div class="controls">
+        <input type="file" id="midiFile" accept=".mid" />
+        <span class="pill"
+          ><label for="bpmInput">BPM</label>
+          <input
+            type="number"
+            id="bpmInput"
+            value="120"
+            min="30"
+            max="300"
+            step="1"
+            style="width: 92px"
+          />
+        </span>
+        <button id="applyBpm">Apply</button>
+      </div>
+      <div class="controls">
+        <span class="pill">
+          <label for="trackMode">Mode</label>
+          <select id="trackMode">
+            <option value="single" selected>Single Track</option>
+            <option value="all">All Tracks</option>
+            <option value="instruments">Instruments</option>
+          </select>
+        </span>
+        <span class="pill">
+          <label for="trackSelect">Track</label>
+          <select id="trackSelect"></select>
+        </span>
+        <!-- Chord mode selector -->
+        <span class="pill">
+          <label for="chordMode">Chords</label>
+          <select id="chordMode">
+            <option value="off" selected>Off</option>
+            <option value="on">On</option>
+          </select>
+        </span>
+        <button id="previewBtn" disabled>Preview</button>
+        <button id="playBtn" disabled>Play</button>
+        <button id="exportBtn" disabled>Export JSON</button>
+        <button id="clearBtn" disabled>Clear</button>
+      </div>
+      <div class="controls" id="instrumentControls" style="display: none">
+        <span class="pill"><strong>Instruments</strong></span>
+        <button id="addInstrumentBtn" class="mini-btn" disabled>
+          Add Instrument
+        </button>
+      </div>
+      <div
+        class="instrument-list"
+        id="instrumentList"
+        style="display: none"
+      ></div>
+      <div class="row" id="infoRow" style="display: none">
+        <span class="pill"
+          ><strong>Delay Pattern</strong>: <span id="delayPattern"></span
+        ></span>
+        <span class="pill"
+          ><strong>Note Value</strong>: <span id="noteValue"></span
+        ></span>
+        <span class="pill"
+          ><strong>Notes</strong>: <span id="noteCount">0</span></span
+        >
+      </div>
+      <div class="sep"></div>
+      <div class="timeline-shell">
+        <div class="timeline-top">
+          <div class="left">
+            <span class="pill"><strong>Timeline</strong></span>
+            <span class="pill">Zoom: <span id="tlZoomLabel">1.0×</span></span>
+            <span class="pill">Window: <span id="tlWindow">0.00s</span></span>
+            <span class="pill">Time: <span id="tlTime">0.00s</span></span>
+            <span class="pill"
+              >Selected: <span id="tlSelected">None</span></span
+            >
+          </div>
+          <div class="right">
+            <button id="tlZoomOut">−</button>
+            <button id="tlZoomIn">+</button>
+            <button id="tlStepBack" title="Previous note">◀</button>
+            <button id="tlStepFwd" title="Next note">▶</button>
+            <button id="tlReset">Reset</button>
+          </div>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="grid"></div>
+          <div class="lanes" id="lanes"></div>
+          <div class="notes" id="timelineNotes"></div>
+          <div class="playhead" id="playhead" style="left: 0"></div>
+          <div class="tooltip" id="tlTip"></div>
+        </div>
+        <div class="timeline-bottom">
+          <div class="range">
+            <label for="tlZoom"><span class="kbd">Wheel</span> Zoom</label>
+            <input
+              type="range"
+              id="tlZoom"
+              min="1"
+              max="20"
+              value="1"
+              step="1"
+            />
+            <span class="pill"
+              >Start: <span id="tlStartLabel">0.00s</span></span
+            >
+          </div>
+          <div class="range">
+            <label for="tlScrub"><span class="kbd">Click</span> Seek</label>
+            <input
+              type="range"
+              id="tlScrub"
+              min="0"
+              max="1000"
+              value="0"
+              step="1"
+            />
+            <span class="pill"
+              >Duration: <span id="tlDuration">0.00s</span></span
+            >
+          </div>
+          <div class="hint">
+            Drag timeline to pan. Keys:
+            <span class="kbd">Space</span> play/pause,
+            <span class="kbd">←</span>/<span class="kbd">→</span> step notes,
+            <span class="kbd">Esc</span> clear selection.
+          </div>
+        </div>
+      </div>
     </div>
-
-    <h2>Result: <span id="result"></span></h2>
-
+    <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
     <script>
-        // List of notes with their associated labels
-        const notesWithLabels = [
-  {
-    "name": "Turquoise",
-    "note": "E3",
-    "source": "Fantasy",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#025E4C"
-  },
-  {
-    "name": "Dark Purple",
-    "note": "F3",
-    "source": "Fantasy",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#292A3A"
-  },
-  {
-    "name": "Gray",
-    "note": "F#3",
-    "source": "Research",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#BDBFC5"
-  },
-  {
-    "name": "Blurple",
-    "note": "G3",
-    "source": "Snow",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#3164AF"
-  },
-  {
-    "name": "Green",
-    "note": "G#3",
-    "source": "Fantasy",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#167325"
-  },
-  {
-    "name": "Black",
-    "note": "A3",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#121212"
-  },
-  {
-    "name": "Light Olive",
-    "note": "A#3",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#679C43"
-  },
-  {
-    "name": "White",
-    "note": "B3",
-    "source": "Snow",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#FFFFFF",
-    "glow": ["#FF4655"]
-  },
-  {
-    "name": "Light Mocha",
-    "note": "C4",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#A26550"
-  },
-  {
-    "name": "Dark Red",
-    "note": "C#4",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#54393C"
-  },
-  {
-    "name": "Red",
-    "note": "D4",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#DF5454",
-    "glow": ["#FFFEFA"]
-  },
-  {
-    "name": "Mocha",
-    "note": "D#4",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#89462E"
-  },
-  {
-    "name": "Orange",
-    "note": "E4",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#DF6F54",
-    "glow": ["#FFB45A"]
-  },
-  {
-    "name": "Light Brown",
-    "note": "F4",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#B79C91"
-  },
-  {
-    "name": "Light Yellow",
-    "note": "F#4",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#F6C68D",
-    "glow": ["#AFFD9D"]
-  },
-  {
-    "name": "Light Teal",
-    "note": "G4",
-    "source": "Snow",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#5DC9A0"
-  },
-  {
-    "name": "Olive",
-    "note": "G#4",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#44682B"
-  },
-  {
-    "name": "Dark Green",
-    "note": "A4",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#2D594F",
-    "glow": ["#00FFFF"]
-  },
-  {
-    "name": "Cyan",
-    "note": "A#4",
-    "source": "Snow",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#5DC6CA"
-  },
-  {
-    "name": "Dark Blue",
-    "note": "B4",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#576077",
-    "glow": ["#FF4655", "#FFADFF"]
-  },
-  {
-    "name": "Light Blue",
-    "note": "C5",
-    "source": "Snow",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#82BADF"
-  },
-  {
-    "name": "Blue",
-    "note": "C#5",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#5D6BBD"
-  },
-  {
-    "name": "Purple",
-    "note": "D5",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#735FB0",
-    "glow": ["#FFFEFA", "#D567FF"]
-  },
-  {
-    "name": "Dark Gray",
-    "note": "D#5",
-    "source": "Research",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#7F8185"
-  },
-  {
-    "name": "Brown",
-    "note": "E5",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#91776B",
-    "glow": ["#FFB45A"]
-  },
-  {
-    "name": "Lavender",
-    "note": "F5",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#927FDE"
-  },
-  {
-    "name": "Dark Brown",
-    "note": "F#5",
-    "source": "Suburbs",
-    "butt_coins": 100,
-    "stuffing": 100,
-    "color": "#423732",
-    "glow": ["#AFFD9D"]
-  },
-  {
-    "name": "Orchid",
-    "note": "G5",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#D377C4"
-  },
-  {
-    "name": "Teal",
-    "note": "G#5",
-    "source": "Fantasy",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#105F6B"
-  },
-  {
-    "name": "Pink",
-    "note": "A5",
-    "source": "Snow",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#DA89AC",
-    "glow": ["#00FFFF"]
-  },
-  {
-    "name": "Periwinkle",
-    "note": "A#5",
-    "source": "Fantasy",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#A192CE"
-  },
-  {
-    "name": "Yellow",
-    "note": "B5",
-    "source": "Ocean",
-    "butt_coins": 300,
-    "stuffing": 100,
-    "color": "#F7C332",
-    "glow": ["#FFADFF"]
-  },
-  {
-    "name": "Light Orange",
-    "note": "C6",
-    "source": "Unreleased",
-    "color": "#E09E54"
-  },
-  {
-    "name": "Light Green",
-    "note": "C#6",
-    "source": "Unreleased",
-    "color": "#83BB45"
-  },
-  {
-    "name": "Purple",
-    "note": "D6",
-    "source": "Fantasy",
-    "butt_coins": 800,
-    "stuffing": 100,
-    "color": "#D567FF"
-  }
-];
-
-        // Function to validate note format
-        function isValidNoteFormat(note) {
-            const notePattern = /^[A-G](#|b)?[0-8]$/;
-            return notePattern.test(note);
+      // ===== Colour chart based on Yeeps note block table (paintHex from wiki)
+      const paintHex = {
+        "Dark Maroon": "#352A2A",
+        Turquoise: "#38886D",
+        "Dark Purple": "#36394C",
+        Gray: "#BCBFC4",
+        Blurple: "#3264AF",
+        Green: "#469740",
+        Black: "#121212",
+        "Light Olive": "#689C43",
+        White: "#F5F5F5",
+        "Light Mocha": "#A16550",
+        "Dark Red": "#54393C",
+        Red: "#DF5454",
+        Mocha: "#89462D",
+        Orange: "#DF6F54",
+        "Light Brown": "#B79C91",
+        "Light Yellow": "#F5C68D",
+        "Light Teal": "#5EC9A0",
+        Olive: "#466A2D",
+        "Dark Green": "#2D594F",
+        Cyan: "#5EC6C9",
+        "Dark Blue": "#576077",
+        "Light Blue": "#82B9DF",
+        Blue: "#5D6BBD",
+        Purple: "#735FB0",
+        "Dark Gray": "#77797B",
+        Brown: "#91776B",
+        Lavender: "#927FDE",
+        "Dark Brown": "#423732",
+        Orchid: "#D378C4",
+        Teal: "#387D88",
+        Pink: "#DB89AC",
+        Periwinkle: "#C1B4F9",
+        Yellow: "#F7C331",
+        Guac: "#E3F06D",
+        Lime: "#83BB44",
+        Maroon: "#9D4141",
+        Beige: "#E2C5A0",
+        "Light Orange": "#DF9E54",
+      };
+      // Map MIDI note names to Yeeps paint names
+      const noteChart = {
+        E3: "Turquoise",
+        F3: "Dark Purple",
+        "F#3": "Gray",
+        Gb3: "Gray",
+        G3: "Blurple",
+        "G#3": "Green",
+        Ab3: "Green",
+        A3: "Black",
+        "A#3": "Light Olive",
+        Bb3: "Light Olive",
+        B3: "White",
+        C4: "Light Mocha",
+        "C#4": "Dark Red",
+        Db4: "Dark Red",
+        D4: "Red",
+        "D#4": "Mocha",
+        Eb4: "Mocha",
+        E4: "Orange",
+        F4: "Light Brown",
+        "F#4": "Light Yellow",
+        Gb4: "Light Yellow",
+        G4: "Light Teal",
+        "G#4": "Olive",
+        Ab4: "Olive",
+        A4: "Dark Green",
+        "A#4": "Cyan",
+        Bb4: "Cyan",
+        B4: "Dark Blue",
+        C5: "Light Blue",
+        "C#5": "Blue",
+        Db5: "Blue",
+        D5: "Purple",
+        "D#5": "Dark Gray",
+        Eb5: "Dark Gray",
+        E5: "Brown",
+        F5: "Lavender",
+        "F#5": "Dark Brown",
+        Gb5: "Dark Brown",
+        G5: "Orchid",
+        "G#5": "Teal",
+        Ab5: "Teal",
+        A5: "Pink",
+        "A#5": "Periwinkle",
+        Bb5: "Periwinkle",
+        B5: "Yellow",
+        C6: "Light Orange",
+        "C#6": "Lime",
+        Db6: "Lime",
+        D6: "Maroon",
+        "D#6": "Beige",
+        Eb6: "Beige",
+        E6: "Light Orange", // Note block "Macaroni" alias removed
+      };
+      const midiNoteToName = (n) => {
+        const names = [
+          "C",
+          "C#",
+          "D",
+          "D#",
+          "E",
+          "F",
+          "F#",
+          "G",
+          "G#",
+          "A",
+          "A#",
+          "B",
+        ];
+        return names[n % 12] + (Math.floor(n / 12) - 1);
+      };
+      const delayChart = { Big: 200, Small: 20, Tiny: 2, Wire: 1 };
+      // BPM pattern info (for UI only)
+      const patterns = [
+        { spaces: 1, bpm: 1200, pattern: ["Wire"] },
+        { spaces: 2, bpm: 600, pattern: ["Wire", "Wire"] },
+        { spaces: 3, bpm: 400, pattern: ["Wire", "Tiny"] },
+        { spaces: 4, bpm: 300, pattern: ["Wire", "Tiny", "Wire"] },
+        { spaces: 5, bpm: 240, pattern: ["Wire", "Tiny", "Tiny"] },
+        { spaces: 6, bpm: 200, pattern: ["Wire", "Tiny", "Wire", "Tiny"] },
+        { spaces: 7, bpm: 171, pattern: ["Wire", "Tiny", "Tiny", "Tiny"] },
+        {
+          spaces: 8,
+          bpm: 150,
+          pattern: ["Wire", "Tiny", "Tiny", "Tiny", "Wire"],
+        },
+        {
+          spaces: 9,
+          bpm: 133,
+          pattern: ["Wire", "Tiny", "Tiny", "Tiny", "Tiny"],
+        },
+      ];
+      function calculateOptimalPattern(bpm) {
+        let best = patterns[0];
+        for (const p of patterns) {
+          if (bpm <= p.bpm) best = p;
+          else break;
         }
-
-        // Function to find the closest match and return the result with label
-        function findClosestNote(inputNote) {
-            if (!isValidNoteFormat(inputNote)) {
-                return "Invalid note format";
-            }
-
-            let closestNote = null;
-            let closestDistance = Infinity;
-
-            notesWithLabels.forEach(({ note, label }) => {
-                let distance = calculateDistance(note, inputNote);
-                if (distance < closestDistance) {
-                    closestDistance = distance;
-                    closestNote = { note, label };
-                }
-            });
-
-            return closestNote 
-                ? `${closestNote.label} - ${closestNote.note}`
-                : "No close match found";
+        return best;
+      }
+      // ===== Elements =====
+      const midiFileInput = document.getElementById("midiFile");
+      const bpmInput = document.getElementById("bpmInput");
+      const applyBpmBtn = document.getElementById("applyBpm");
+      const trackMode = document.getElementById("trackMode");
+      const trackSelect = document.getElementById("trackSelect");
+      const instrumentControls = document.getElementById("instrumentControls");
+      const addInstrumentBtn = document.getElementById("addInstrumentBtn");
+      const instrumentListEl = document.getElementById("instrumentList");
+      const chordModeSelect = document.getElementById("chordMode");
+      const previewBtn = document.getElementById("previewBtn");
+      const playBtn = document.getElementById("playBtn");
+      const exportBtn = document.getElementById("exportBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const infoRow = document.getElementById("infoRow");
+      const delayPatternEl = document.getElementById("delayPattern");
+      const noteValueEl = document.getElementById("noteValue");
+      const noteCountEl = document.getElementById("noteCount");
+      const lanesEl = document.getElementById("lanes");
+      const timelineEl = document.getElementById("timeline");
+      const timelineNotesEl = document.getElementById("timelineNotes");
+      const playheadEl = document.getElementById("playhead");
+      const tlTip = document.getElementById("tlTip");
+      const tlZoom = document.getElementById("tlZoom");
+      const tlZoomLabel = document.getElementById("tlZoomLabel");
+      const tlWindowEl = document.getElementById("tlWindow");
+      const tlTimeEl = document.getElementById("tlTime");
+      const tlSelectedEl = document.getElementById("tlSelected");
+      const tlStartLabel = document.getElementById("tlStartLabel");
+      const tlDurationEl = document.getElementById("tlDuration");
+      const tlScrub = document.getElementById("tlScrub");
+      const tlZoomInBtn = document.getElementById("tlZoomIn");
+      const tlZoomOutBtn = document.getElementById("tlZoomOut");
+      const tlStepBackBtn = document.getElementById("tlStepBack");
+      const tlStepFwdBtn = document.getElementById("tlStepFwd");
+      const tlResetBtn = document.getElementById("tlReset");
+      // ===== State =====
+      let currentMidi = null;
+      let tracksAbsNotes = [];
+      let currentSelectedTrackIdx = 0;
+      let instruments = [];
+      let instrumentIdCounter = 1;
+      let currentMappedNotes = []; // For mapping and timeline groups (notes or chords)
+      let mappedStartTimes = [];
+      let mappedDuration = 0.001;
+      let zoom = 1;
+      let windowStart = 0;
+      let windowDuration = 0.001;
+      let selectedIndex = -1;
+      let dragging = false;
+      let dragStartX = 0;
+      let dragStartWindowStart = 0;
+      // Audio state
+      let audioCtx = null;
+      let scheduledOscs = [];
+      let scheduledTimeouts = [];
+      let previewOscs = [];
+      let previewTimeouts = [];
+      let playing = false;
+      let previewPlaying = false;
+      let rafId = null;
+      // ===== Helper functions =====
+      function clamp(v, a, b) {
+        return Math.max(a, Math.min(b, v));
+      }
+      function clampInt(v, a, b) {
+        return Math.max(a, Math.min(b, v | 0));
+      }
+      function fmt(s) {
+        return (Math.round(s * 100) / 100).toFixed(2) + "s";
+      }
+      function getBpm() {
+        const bpm = clampInt(parseInt(bpmInput.value, 10) || 120, 30, 300);
+        bpmInput.value = String(bpm);
+        return bpm;
+      }
+      function updateBpmInfo() {
+        const bpm = getBpm();
+        const p = calculateOptimalPattern(bpm);
+        delayPatternEl.textContent = p.pattern
+          .map((b) =>
+            b === "Wire"
+              ? "⬛"
+              : b === "Tiny"
+              ? "🟩"
+              : b === "Small"
+              ? "🟦"
+              : "🟪"
+          )
+          .join(" ");
+        noteValueEl.textContent = `1/${p.spaces} note at ${bpm} BPM`;
+        infoRow.style.display = "flex";
+      }
+      // ===== Instrument helpers =====
+      function ensureInstrumentTrackIndex(idx) {
+        const maxIdx = Math.max(0, tracksAbsNotes.length - 1);
+        return clampInt(idx, 0, maxIdx);
+      }
+      function renderInstrumentList() {
+        addInstrumentBtn.disabled = !tracksAbsNotes.length;
+        instrumentListEl.innerHTML = "";
+        if (!instruments.length) {
+          const empty = document.createElement("div");
+          empty.className = "pill";
+          empty.textContent = "No instruments added yet.";
+          instrumentListEl.appendChild(empty);
+          return;
         }
-
-        // Function to calculate a basic "distance" between two notes
-        function calculateDistance(note1, note2) {
-            let distance = 0;
-            for (let i = 0; i < Math.min(note1.length, note2.length); i++) {
-                if (note1[i] !== note2[i]) {
-                    distance++;
-                }
-            }
-            distance += Math.abs(note1.length - note2.length);
-            return distance;
-        }
-
-        // Get the query parameter from the URL
-        function getQueryParam(param) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(param);
-        }
-
-        // Handle form submission
-        document.getElementById('noteForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const inputNote = document.getElementById('noteInput').value.trim();
-            const closestNote = findClosestNote(inputNote);
-
-            document.getElementById('result').textContent = closestNote;
+        instruments.forEach((inst, idx) => {
+          const row = document.createElement("div");
+          row.className = "instrument-row";
+          const label = document.createElement("span");
+          label.className = "pill";
+          label.textContent = `#${idx + 1}`;
+          const nameInput = document.createElement("input");
+          nameInput.type = "text";
+          nameInput.className = "instrument-name";
+          nameInput.placeholder = "Instrument name";
+          nameInput.value = inst.name;
+          nameInput.addEventListener("input", (e) =>
+            updateInstrumentName(inst.id, e.target.value)
+          );
+          const trackSel = document.createElement("select");
+          trackSel.innerHTML = trackSelect.innerHTML;
+          trackSel.value = String(inst.trackIndex);
+          trackSel.addEventListener("change", (e) =>
+            updateInstrumentTrack(
+              inst.id,
+              parseInt(e.target.value, 10) || 0
+            )
+          );
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "mini-btn";
+          removeBtn.textContent = "Remove";
+          removeBtn.addEventListener("click", () =>
+            removeInstrument(inst.id)
+          );
+          row.appendChild(label);
+          row.appendChild(nameInput);
+          row.appendChild(trackSel);
+          row.appendChild(removeBtn);
+          instrumentListEl.appendChild(row);
         });
-
-        // Check for the 'note' parameter in the URL
-        const noteParam = getQueryParam('note');
-        if (noteParam) {
-            // If the 'note' parameter is present, show only the result
-            const closestNote = findClosestNote(noteParam);
-            document.getElementById('result').textContent = closestNote;
-            document.getElementById('formContainer').style.display = 'none';
+      }
+      function addInstrument(trackIndex = null, name = "") {
+        if (!tracksAbsNotes.length) return;
+        const nextTrack =
+          trackIndex === null
+            ? ensureInstrumentTrackIndex(instruments.length)
+            : ensureInstrumentTrackIndex(trackIndex);
+        const inst = {
+          id: instrumentIdCounter++,
+          name: name || `Instrument ${instruments.length + 1}`,
+          trackIndex: nextTrack,
+        };
+        instruments.push(inst);
+        renderInstrumentList();
+        if (trackMode.value === "instruments") rebuildMappedFromMode();
+      }
+      function removeInstrument(id) {
+        instruments = instruments.filter((i) => i.id !== id);
+        renderInstrumentList();
+        if (trackMode.value === "instruments") rebuildMappedFromMode();
+      }
+      function updateInstrumentTrack(id, trackIndex) {
+        instruments = instruments.map((i) =>
+          i.id === id
+            ? { ...i, trackIndex: ensureInstrumentTrackIndex(trackIndex) }
+            : i
+        );
+        renderInstrumentList();
+        if (trackMode.value === "instruments") rebuildMappedFromMode();
+      }
+      function updateInstrumentName(id, name) {
+        instruments = instruments.map((i) =>
+          i.id === id ? { ...i, name: name || i.name } : i
+        );
+        if (trackMode.value === "instruments" && currentMappedNotes.length) {
+          renderTimeline();
         }
+      }
+      function syncInstrumentsToTracks() {
+        if (!tracksAbsNotes.length) {
+          instruments = [];
+          renderInstrumentList();
+          return;
+        }
+        instruments = instruments.map((i) => ({
+          ...i,
+          trackIndex: ensureInstrumentTrackIndex(i.trackIndex),
+        }));
+        if (!instruments.length) {
+          instruments.push({
+            id: instrumentIdCounter++,
+            name: "Instrument 1",
+            trackIndex: 0,
+          });
+        }
+        renderInstrumentList();
+      }
+      function refreshModeUi() {
+        const useInstruments = trackMode.value === "instruments";
+        instrumentControls.style.display = useInstruments ? "flex" : "none";
+        instrumentListEl.style.display = useInstruments ? "flex" : "none";
+        trackSelect.disabled = useInstruments;
+        if (useInstruments && !instruments.length && tracksAbsNotes.length) {
+          addInstrument();
+        }
+      }
+      function collectNotesForCurrentMode() {
+        const mode = trackMode.value;
+        if (mode === "all") {
+          return tracksAbsNotes
+            .flat()
+            .slice()
+            .sort((a, b) => a.time - b.time);
+        }
+        if (mode === "instruments") {
+          const combined = [];
+          instruments.forEach((inst, idx) => {
+            const src = tracksAbsNotes[inst.trackIndex] || [];
+            src.forEach((n) =>
+              combined.push({
+                ...n,
+                instrumentIndex: idx,
+                instrumentName: inst.name,
+              })
+            );
+          });
+          return combined.sort((a, b) => a.time - b.time);
+        }
+        return (tracksAbsNotes[currentSelectedTrackIdx] || []).slice();
+      }
+      function handleTrackModeChange() {
+        refreshModeUi();
+        rebuildMappedFromMode();
+      }
+      // Build mapped notes from absolute notes; optionally group chords
+      function buildMappedGroups(absNotes, chordMode) {
+        const bpm = getBpm();
+        const beatMs = 60000 / bpm;
+        const spaceMs = beatMs / 4;
+        const groups = [];
+        if (chordMode === "on") {
+          // group notes by absolute time (exact equality)
+          let lastGroupTime = null;
+          let lastGroup = null;
+          const sorted = absNotes.slice().sort((a, b) => a.time - b.time);
+          for (const n of sorted) {
+            if (lastGroup && Math.abs(n.time - lastGroupTime) < 1e-9) {
+              // add to current group
+              lastGroup.notes.push(n);
+            } else {
+              // start new group
+              const group = { notes: [n], absTime: n.time };
+              groups.push(group);
+              lastGroupTime = n.time;
+              lastGroup = group;
+            }
+          }
+        } else {
+          // each note becomes its own group
+          const sorted = absNotes.slice().sort((a, b) => a.time - b.time);
+          for (const n of sorted) {
+            groups.push({ notes: [n], absTime: n.time });
+          }
+        }
+        // compute delaySpaces between groups
+        const mapped = [];
+        let lastTime = 0;
+        for (const g of groups) {
+          const delaySpaces = Math.max(
+            0,
+            Math.round(((g.absTime - lastTime) * 1000) / spaceMs)
+          );
+          lastTime = g.absTime;
+          // Build display info: for group we gather note names, colours, etc.
+          const mappedGroup = {
+            absTime: g.absTime,
+            delaySpaces: delaySpaces,
+            notes: g.notes.map((n) => {
+              const name = midiNoteToName(n.midi);
+              const paintName = noteChart[name] || "Unknown";
+              const color = paintHex[paintName] || "#888888";
+              // compute holdSpaces based on absolute note duration
+              const holdSpaces = Math.max(
+                0,
+                Math.round(((n.duration || 0) * 1000) / spaceMs)
+              );
+              return {
+                midi: n.midi,
+                name,
+                mapped: paintName,
+                color,
+                instrumentIndex: n.instrumentIndex,
+                instrumentName: n.instrumentName,
+                trackIndex: n.trackIndex,
+                duration: n.duration,
+                holdSpaces,
+              };
+            }),
+          };
+          mapped.push(mappedGroup);
+        }
+        return mapped;
+      }
+      function noteLabel(note) {
+        const inst =
+          typeof note.instrumentName === "string" &&
+          note.instrumentName.trim().length
+            ? ` - ${note.instrumentName.trim()}`
+            : "";
+        return `${note.mapped} (${note.name})${inst}`;
+      }
+      function laneCount() {
+        const mode = trackMode.value;
+        if (mode === "all") return Math.max(1, tracksAbsNotes.length);
+        if (mode === "instruments") return Math.max(1, instruments.length);
+        return 1;
+      }
+      function laneForGroup(group) {
+        // Choose lane based on track index of first note
+        const mode = trackMode.value;
+        if (mode === "all") {
+          return group.notes[0]?.trackIndex || 0;
+        }
+        if (mode === "instruments") {
+          return group.notes[0]?.instrumentIndex || 0;
+        }
+        return 0;
+      }
+      function laneY(laneIndex, lanes) {
+        const rect = timelineEl.getBoundingClientRect();
+        const h = rect.height || 260;
+        const topPad = 26;
+        const botPad = 26;
+        const usable = Math.max(1, h - topPad - botPad);
+        if (lanes <= 1) return topPad + usable / 2;
+        const step = usable / (lanes - 1);
+        return topPad + laneIndex * step;
+      }
+      function computeMappedStartTimes() {
+        const bpm = getBpm();
+        const spaceMs = 60000 / bpm / 4;
+        mappedStartTimes = [];
+        let acc = 0;
+        for (const g of currentMappedNotes) {
+          acc += (g.delaySpaces * spaceMs) / 1000;
+          mappedStartTimes.push(acc);
+        }
+        mappedDuration = mappedStartTimes.length
+          ? mappedStartTimes[mappedStartTimes.length - 1]
+          : 0.001;
+        if (mappedDuration < 0.001) mappedDuration = 0.001;
+        zoom = clamp(zoom, 1, 20);
+        windowDuration = mappedDuration / zoom;
+        if (windowDuration < 0.001) windowDuration = 0.001;
+        windowStart = clamp(
+          windowStart,
+          0,
+          Math.max(0, mappedDuration - windowDuration)
+        );
+      }
+      function timeToX(t) {
+        return (t - windowStart) / windowDuration;
+      }
+      function xToTime(x01) {
+        return windowStart + x01 * windowDuration;
+      }
+      function setZoomLevel(z, anchorTime = null) {
+        const prevWindowDuration = windowDuration;
+        zoom = clamp(z, 1, 20);
+        windowDuration = mappedDuration / zoom;
+        if (windowDuration < 0.001) windowDuration = 0.001;
+        const anchor =
+          anchorTime !== null
+            ? anchorTime
+            : windowStart + prevWindowDuration / 2;
+        windowStart = clamp(
+          anchor - windowDuration / 2,
+          0,
+          Math.max(0, mappedDuration - windowDuration)
+        );
+        tlZoom.value = String(Math.round(zoom));
+        tlZoomLabel.textContent = zoom.toFixed(1) + "×";
+        renderTimeline();
+      }
+      function setPlayheadByTime(t) {
+        const x01 = clamp(timeToX(t), 0, 1);
+        playheadEl.style.left = x01 * 100 + "%";
+        tlTimeEl.textContent = fmt(t);
+        const rel = clamp((t - windowStart) / windowDuration, 0, 1);
+        tlScrub.value = String(Math.round(rel * 1000));
+      }
+      function showTip(xPct, yPx, text) {
+        tlTip.textContent = text;
+        tlTip.style.left = xPct * 100 + "%";
+        tlTip.style.top = yPx + "px";
+        tlTip.classList.add("show");
+      }
+      function hideTip() {
+        tlTip.classList.remove("show");
+      }
+      function delaySpacesToEmoji(spaces) {
+        if (spaces <= 0) return "—";
+        let remaining = spaces;
+        const parts = [];
+        const blocks = [
+          { type: "Big", value: delayChart.Big, emoji: "🟪" },
+          { type: "Small", value: delayChart.Small, emoji: "🟦" },
+          { type: "Tiny", value: delayChart.Tiny, emoji: "🟩" },
+          { type: "Wire", value: delayChart.Wire, emoji: "⬛" },
+        ];
+        for (const b of blocks) {
+          let count = 0;
+          while (remaining >= b.value) {
+            remaining -= b.value;
+            count++;
+          }
+          if (count) parts.push(b.emoji + (count > 1 ? "×" + count : ""));
+        }
+        while (remaining > 0) {
+          remaining--;
+          parts.push("⬛");
+        }
+        return parts.join(" ");
+      }
+      // Build lanes lines
+      function buildLanes() {
+        lanesEl.innerHTML = "";
+        const lanes = laneCount();
+        for (let i = 0; i < lanes; i++) {
+          const y = laneY(i, lanes);
+          const line = document.createElement("div");
+          line.className = "lane";
+          line.style.top = y + "px";
+          lanesEl.appendChild(line);
+        }
+      }
+      function renderTimeline() {
+        if (!currentMappedNotes.length) return;
+        computeMappedStartTimes();
+        buildLanes();
+        tlDurationEl.textContent = fmt(mappedDuration);
+        tlWindowEl.textContent = fmt(windowDuration);
+        tlStartLabel.textContent = fmt(windowStart);
+        tlZoomLabel.textContent = zoom.toFixed(1) + "×";
+        timelineNotesEl.innerHTML = "";
+        hideTip();
+        const lanes = laneCount();
+        const pad = windowDuration * 0.02;
+        // Precompute spaceMs for hold bar durations
+        const bpmForHold = getBpm();
+        const spaceMsForHold = 60000 / bpmForHold / 4;
+
+        // Draw delay lines
+        for (let i = 1; i < currentMappedNotes.length; i++) {
+          const t0 = mappedStartTimes[i - 1] || 0;
+          const t1 = mappedStartTimes[i] || 0;
+          if (t1 < windowStart - pad || t0 > windowStart + windowDuration + pad)
+            continue;
+          const x0 = clamp(timeToX(t0), 0, 1);
+          const x1 = clamp(timeToX(t1), 0, 1);
+          if (x1 <= 0 || x0 >= 1) continue;
+          const group = currentMappedNotes[i];
+          const lane = laneForGroup(group);
+          const y = laneY(lane, lanes);
+          const line = document.createElement("div");
+          line.className = "delay-line";
+          line.style.left = Math.min(x0, x1) * 100 + "%";
+          line.style.top = y + "px";
+          line.style.width = Math.max(0.5, Math.abs(x1 - x0) * 100) + "%";
+          // choose color of first note
+          line.style.background = group.notes[0]?.color || "#999";
+          timelineNotesEl.appendChild(line);
+        }
+        // Draw ticks (notes within groups)
+        for (let i = 0; i < currentMappedNotes.length; i++) {
+          const t = mappedStartTimes[i] || 0;
+          if (t < windowStart - pad || t > windowStart + windowDuration + pad)
+            continue;
+          const x01 = timeToX(t);
+          if (x01 < -0.05 || x01 > 1.05) continue;
+          const group = currentMappedNotes[i];
+          const lane = laneForGroup(group);
+          const baseY = laneY(lane, lanes);
+          const noteCount = group.notes.length;
+          // Draw hold bars for each note in group
+          group.notes.forEach((note, idx) => {
+            const offset = (idx - (noteCount - 1) / 2) * 14;
+            const y = baseY + offset;
+            const holdSecs = ((note.holdSpaces || 0) * spaceMsForHold) / 1000;
+            if (holdSecs > 0) {
+              const endTime = t + holdSecs;
+              const startX = clamp(timeToX(t), 0, 1);
+              const endX = clamp(timeToX(endTime), 0, 1);
+              const widthPct = (endX - startX) * 100;
+              if (widthPct > 0) {
+                const bar = document.createElement("div");
+                bar.className = "hold-bar";
+                bar.style.left = startX * 100 + "%";
+                // position slightly above base line for grouping; offset by 6px
+                bar.style.top = y + 6 + "px";
+                bar.style.width = Math.max(widthPct, 0.5) + "%";
+                bar.style.background = note.color;
+                timelineNotesEl.appendChild(bar);
+              }
+            }
+          });
+
+          group.notes.forEach((note, idx) => {
+            const offset = (idx - (noteCount - 1) / 2) * 14; // vertical offset for stacked notes
+            const y = baseY + offset;
+            const tick = document.createElement("div");
+            tick.className = "tick" + (i === selectedIndex ? " selected" : "");
+            tick.style.left = clamp(x01, 0, 1) * 100 + "%";
+            tick.style.top = y + "px";
+            tick.style.background = note.color;
+            tick.title = `${i + 1}: ${noteLabel(note)} • delay ${
+              group.delaySpaces
+            } ${delaySpacesToEmoji(group.delaySpaces)}`;
+            tick.addEventListener("mouseenter", () => {
+              const names = group.notes
+                .map((n) => noteLabel(n))
+                .join(" + ");
+              const delayStr = `${group.delaySpaces} ${delaySpacesToEmoji(
+                group.delaySpaces
+              )}`;
+              showTip(
+                clamp(x01, 0, 1),
+                y - 20,
+                `${i + 1}: ${names} • delay ${delayStr}`
+              );
+            });
+            tick.addEventListener("mouseleave", hideTip);
+            tick.addEventListener("click", () => {
+              selectedIndex = i;
+              const nt = mappedStartTimes[i] || 0;
+              if (zoom > 1) {
+                windowStart = clamp(
+                  nt - windowDuration / 2,
+                  0,
+                  Math.max(0, mappedDuration - windowDuration)
+                );
+              }
+              renderTimeline();
+              setPlayheadByTime(nt);
+              const names = group.notes
+                .map((n) => noteLabel(n))
+                .join(" + ");
+              const delayStr = `${group.delaySpaces} ${delaySpacesToEmoji(
+                group.delaySpaces
+              )}`;
+              tlSelectedEl.textContent = `${
+                i + 1
+              }: ${names} • delay ${delayStr}`;
+            });
+            timelineNotesEl.appendChild(tick);
+          });
+        }
+        // keep playhead within window
+        const tNow = currentPlayheadTime();
+        setPlayheadByTime(
+          clamp(tNow, windowStart, windowStart + windowDuration)
+        );
+      }
+      function currentPlayheadTime() {
+        const rel = (parseInt(tlScrub.value, 10) || 0) / 1000;
+        return xToTime(clamp(rel, 0, 1));
+      }
+      function stepSelection(dir) {
+        if (!currentMappedNotes.length) return;
+        if (selectedIndex < 0) selectedIndex = 0;
+        else
+          selectedIndex = clampInt(
+            selectedIndex + dir,
+            0,
+            currentMappedNotes.length - 1
+          );
+        const t = mappedStartTimes[selectedIndex] || 0;
+        if (t < windowStart || t > windowStart + windowDuration) {
+          windowStart = clamp(
+            t - windowDuration / 2,
+            0,
+            Math.max(0, mappedDuration - windowDuration)
+          );
+        }
+        setPlayheadByTime(t);
+        const group = currentMappedNotes[selectedIndex];
+        const names = group.notes
+          .map((n) => noteLabel(n))
+          .join(" + ");
+        const delayStr = `${group.delaySpaces} ${delaySpacesToEmoji(
+          group.delaySpaces
+        )}`;
+        tlSelectedEl.textContent = `${
+          selectedIndex + 1
+        }: ${names} • delay ${delayStr}`;
+        renderTimeline();
+      }
+      // ===== Rebuild mapping from mode (tracks & chord) =====
+      function rebuildMappedFromMode() {
+        stopAllAudio();
+        selectedIndex = -1;
+        if (!currentMidi) {
+          currentMappedNotes = [];
+          playBtn.disabled = true;
+          exportBtn.disabled = true;
+          clearBtn.disabled = true;
+          previewBtn.disabled = true;
+          timelineNotesEl.innerHTML = "";
+          lanesEl.innerHTML = "";
+          tlSelectedEl.textContent = "None";
+          return;
+        }
+        const absNotes = collectNotesForCurrentMode();
+        const chordMode = chordModeSelect.value;
+        currentMappedNotes = buildMappedGroups(absNotes, chordMode);
+        noteCountEl.textContent = String(
+          currentMappedNotes.reduce((sum, g) => sum + g.notes.length, 0)
+        );
+        const hasNotes = currentMappedNotes.length > 0;
+        if (!hasNotes) {
+          timelineNotesEl.innerHTML = "";
+          lanesEl.innerHTML = "";
+          tlSelectedEl.textContent = "None";
+          tlDurationEl.textContent = fmt(0);
+          tlWindowEl.textContent = fmt(0);
+          tlStartLabel.textContent = fmt(0);
+          tlTimeEl.textContent = fmt(0);
+          playheadEl.style.left = "0%";
+          tlScrub.value = "0";
+        }
+        playBtn.disabled = !hasNotes;
+        exportBtn.disabled = !hasNotes;
+        clearBtn.disabled = !hasNotes;
+        previewBtn.disabled = !currentMidi;
+        renderTimeline();
+      }
+      // ===== Audio playback functions =====
+      function stopAllScheduled() {
+        scheduledOscs.forEach(({ osc }) => {
+          try {
+            osc.stop();
+          } catch {}
+        });
+        scheduledOscs = [];
+        scheduledTimeouts.forEach((id) => clearTimeout(id));
+        scheduledTimeouts = [];
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      function stopPreview() {
+        previewOscs.forEach(({ osc }) => {
+          try {
+            osc.stop();
+          } catch {}
+        });
+        previewOscs = [];
+        previewTimeouts.forEach((id) => clearTimeout(id));
+        previewTimeouts = [];
+        previewPlaying = false;
+        previewBtn.textContent = "Preview";
+      }
+      function stopAllAudio() {
+        stopAllScheduled();
+        if (previewPlaying) stopPreview();
+      }
+      function ensureAudio() {
+        if (!audioCtx)
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      function startPlayheadAnimation(startCtxTime, startOffsetSec) {
+        const tick = () => {
+          if (!playing || !audioCtx) return;
+          const t = audioCtx.currentTime - startCtxTime + startOffsetSec;
+          const clampedT = clamp(t, 0, mappedDuration);
+          if (zoom > 1) {
+            const margin = windowDuration * 0.18;
+            if (clampedT < windowStart + margin) {
+              windowStart = clamp(
+                clampedT - margin,
+                0,
+                Math.max(0, mappedDuration - windowDuration)
+              );
+              renderTimeline();
+            } else if (clampedT > windowStart + windowDuration - margin) {
+              windowStart = clamp(
+                clampedT - (windowDuration - margin),
+                0,
+                Math.max(0, mappedDuration - windowDuration)
+              );
+              renderTimeline();
+            }
+          }
+          setPlayheadByTime(clampedT);
+          rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+      }
+      playBtn.addEventListener("click", () => {
+        if (!currentMappedNotes.length) return;
+        ensureAudio();
+        if (playing) {
+          stopAllScheduled();
+          playing = false;
+          playBtn.textContent = "Play";
+          return;
+        }
+        if (previewPlaying) stopPreview();
+        computeMappedStartTimes();
+        playing = true;
+        playBtn.textContent = "Pause";
+        const bpm = getBpm();
+        const spaceMs = 60000 / bpm / 4;
+        const startIdx = selectedIndex >= 0 ? selectedIndex : 0;
+        const startOffsetSec =
+          startIdx > 0 ? mappedStartTimes[startIdx - 1] || 0 : 0;
+        let startTime = audioCtx.currentTime + 0.02;
+        let acc = 0;
+        for (let i = startIdx; i < currentMappedNotes.length; i++) {
+          const group = currentMappedNotes[i];
+          acc += (group.delaySpaces * spaceMs) / 1000;
+          const when = startTime + acc;
+          // schedule all notes in the group
+          group.notes.forEach((note) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.value = 440 * Math.pow(2, (note.midi - 69) / 12);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            // compute hold duration based on holdSpaces and BPM
+            const holdSecs = Math.max(
+              0.1,
+              ((note.holdSpaces || 0) * spaceMs) / 1000
+            );
+            gain.gain.setValueAtTime(0.26, when);
+            gain.gain.exponentialRampToValueAtTime(0.0001, when + holdSecs);
+            osc.start(when);
+            osc.stop(when + holdSecs);
+            scheduledOscs.push({ osc, gain });
+          });
+        }
+        // compute total duration including holds for each group
+        const totalSec =
+          currentMappedNotes.slice(startIdx).reduce((sum, g) => {
+            const maxHoldSpaces = g.notes.reduce(
+              (mh, n) => Math.max(mh, n.holdSpaces || 0),
+              0
+            );
+            const holdSecs = (maxHoldSpaces * spaceMs) / 1000;
+            return sum + (g.delaySpaces * spaceMs) / 1000 + holdSecs;
+          }, 0) + 0.5;
+        startPlayheadAnimation(startTime, startOffsetSec);
+        const tid = setTimeout(() => {
+          stopAllScheduled();
+          playing = false;
+          playBtn.textContent = "Play";
+        }, totalSec * 1000);
+        scheduledTimeouts.push(tid);
+      });
+      previewBtn.addEventListener("click", () => {
+        if (!currentMidi) return;
+        ensureAudio();
+        if (previewPlaying) {
+          stopPreview();
+          return;
+        }
+        if (playing) {
+          stopAllScheduled();
+          playing = false;
+          playBtn.textContent = "Play";
+        }
+        previewPlaying = true;
+        previewBtn.textContent = "Stop Preview";
+        const now = audioCtx.currentTime + 0.08;
+        const absNotes = collectNotesForCurrentMode();
+        let endT = 0;
+        absNotes.forEach((n) => {
+          const start = now + n.time;
+          const dur = Math.max(n.duration, 0.08);
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 440 * Math.pow(2, (n.midi - 69) / 12);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          gain.gain.setValueAtTime(0.22, start);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+          osc.start(start);
+          osc.stop(start + dur);
+          previewOscs.push({ osc, gain });
+          endT = Math.max(endT, n.time + dur);
+        });
+        const tid = setTimeout(() => stopPreview(), (endT + 0.5) * 1000);
+        previewTimeouts.push(tid);
+      });
+      exportBtn.addEventListener("click", () => {
+        if (!currentMappedNotes.length) return;
+        const payload = {
+          mode: trackMode.value,
+          bpm: getBpm(),
+          selectedTrackIndex: currentSelectedTrackIdx,
+          chordMode: chordModeSelect.value,
+          instruments: instruments.map((inst) => ({
+            id: inst.id,
+            name: inst.name,
+            trackIndex: inst.trackIndex,
+          })),
+          groups: currentMappedNotes.map((g, i) => ({
+            delaySpaces: g.delaySpaces,
+            absTime: g.absTime,
+            notes: g.notes.map((n) => ({
+              midi: n.midi,
+              name: n.name,
+              mapped: n.mapped,
+              color: n.color,
+              trackIndex: n.trackIndex,
+              instrumentIndex:
+                typeof n.instrumentIndex === "number" ? n.instrumentIndex : null,
+              instrumentName: n.instrumentName,
+              duration: n.duration,
+              holdSpaces: n.holdSpaces,
+            })),
+            mappedTime: mappedStartTimes[i] || 0,
+          })),
+        };
+        const str = JSON.stringify(payload, null, 2);
+        const blob = new Blob([str], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "mapped_notes.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+      clearBtn.addEventListener("click", () => {
+        stopAllAudio();
+        currentMappedNotes = [];
+        mappedStartTimes = [];
+        selectedIndex = -1;
+        timelineNotesEl.innerHTML = "";
+        lanesEl.innerHTML = "";
+        playBtn.disabled = true;
+        exportBtn.disabled = true;
+        clearBtn.disabled = true;
+        previewBtn.disabled = false;
+        tlSelectedEl.textContent = "None";
+        tlDurationEl.textContent = fmt(0);
+        tlWindowEl.textContent = fmt(0);
+        tlStartLabel.textContent = fmt(0);
+        tlTimeEl.textContent = fmt(0);
+        playheadEl.style.left = "0%";
+        tlScrub.value = "0";
+        noteCountEl.textContent = "0";
+      });
+      // ===== Timeline UI controls =====
+      tlZoom.addEventListener("input", () => {
+        const z = parseInt(tlZoom.value, 10) || 1;
+        setZoomLevel(z, currentPlayheadTime());
+      });
+      tlZoomInBtn.addEventListener("click", () =>
+        setZoomLevel(zoom + 1, currentPlayheadTime())
+      );
+      tlZoomOutBtn.addEventListener("click", () =>
+        setZoomLevel(zoom - 1, currentPlayheadTime())
+      );
+      tlResetBtn.addEventListener("click", () => {
+        zoom = 1;
+        windowStart = 0;
+        setZoomLevel(1, 0);
+        selectedIndex = -1;
+        tlSelectedEl.textContent = "None";
+        setPlayheadByTime(0);
+        renderTimeline();
+      });
+      tlScrub.addEventListener("input", () => {
+        if (!currentMappedNotes.length) return;
+        const t = currentPlayheadTime();
+        setPlayheadByTime(t);
+        let bestIdx = 0,
+          bestDist = Infinity;
+        for (let i = 0; i < mappedStartTimes.length; i++) {
+          const d = Math.abs(mappedStartTimes[i] - t);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+        selectedIndex = bestIdx;
+        const g = currentMappedNotes[bestIdx];
+        const names = g.notes.map((n) => noteLabel(n)).join(" + ");
+        const delayStr = `${g.delaySpaces} ${delaySpacesToEmoji(
+          g.delaySpaces
+        )}`;
+        tlSelectedEl.textContent = `${
+          bestIdx + 1
+        }: ${names} • delay ${delayStr}`;
+        renderTimeline();
+      });
+      tlStepBackBtn.addEventListener("click", () => stepSelection(-1));
+      tlStepFwdBtn.addEventListener("click", () => stepSelection(1));
+      timelineEl.addEventListener("click", (e) => {
+        if (!currentMappedNotes.length) return;
+        const rect = timelineEl.getBoundingClientRect();
+        const x01 = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+        const t = xToTime(x01);
+        setPlayheadByTime(t);
+        let bestIdx = 0,
+          bestDist = Infinity;
+        for (let i = 0; i < mappedStartTimes.length; i++) {
+          const d = Math.abs(mappedStartTimes[i] - t);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+        selectedIndex = bestIdx;
+        const g = currentMappedNotes[bestIdx];
+        const names = g.notes.map((n) => noteLabel(n)).join(" + ");
+        const delayStr = `${g.delaySpaces} ${delaySpacesToEmoji(
+          g.delaySpaces
+        )}`;
+        tlSelectedEl.textContent = `${
+          bestIdx + 1
+        }: ${names} • delay ${delayStr}`;
+        renderTimeline();
+      });
+      timelineEl.addEventListener(
+        "wheel",
+        (e) => {
+          if (!currentMappedNotes.length) return;
+          e.preventDefault();
+          const rect = timelineEl.getBoundingClientRect();
+          const x01 = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+          const anchor = xToTime(x01);
+          const delta = Math.sign(e.deltaY);
+          const nextZoom = clamp(zoom + (delta > 0 ? -1 : 1), 1, 20);
+          setZoomLevel(nextZoom, anchor);
+        },
+        { passive: false }
+      );
+      timelineEl.addEventListener("mousedown", (e) => {
+        if (!currentMappedNotes.length) return;
+        dragging = true;
+        dragStartX = e.clientX;
+        dragStartWindowStart = windowStart;
+        timelineEl.style.cursor = "grabbing";
+      });
+      window.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const rect = timelineEl.getBoundingClientRect();
+        const dx = e.clientX - dragStartX;
+        const dt = -(dx / rect.width) * windowDuration;
+        windowStart = clamp(
+          dragStartWindowStart + dt,
+          0,
+          Math.max(0, mappedDuration - windowDuration)
+        );
+        renderTimeline();
+      });
+      window.addEventListener("mouseup", () => {
+        if (!dragging) return;
+        dragging = false;
+        timelineEl.style.cursor = "default";
+      });
+      // ===== MIDI Loading =====
+      midiFileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            currentMidi = new Midi(reader.result);
+          } catch {
+            alert("Error parsing MIDI file");
+            return;
+          }
+          tracksAbsNotes = currentMidi.tracks.map((t, ti) => {
+            return t.notes
+              .map((n) => ({
+                midi: n.midi,
+                time: n.time,
+                duration: n.duration,
+                trackIndex: ti,
+              }))
+              .sort((a, b) => a.time - b.time);
+          });
+          trackSelect.innerHTML = "";
+          currentMidi.tracks.forEach((t, i) => {
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.textContent =
+              t.name && t.name.trim() ? t.name.trim() : `Track ${i + 1}`;
+            trackSelect.appendChild(opt);
+          });
+          currentSelectedTrackIdx = 0;
+          trackSelect.selectedIndex = 0;
+          syncInstrumentsToTracks();
+          refreshModeUi();
+          previewBtn.disabled = false;
+          updateBpmInfo();
+          rebuildMappedFromMode();
+        };
+        reader.readAsArrayBuffer(file);
+      });
+      trackSelect.addEventListener("change", () => {
+        currentSelectedTrackIdx = parseInt(trackSelect.value, 10) || 0;
+        rebuildMappedFromMode();
+      });
+      addInstrumentBtn.addEventListener("click", () => addInstrument());
+      trackMode.addEventListener("change", handleTrackModeChange);
+      chordModeSelect.addEventListener("change", rebuildMappedFromMode);
+      // ===== BPM apply =====
+      function applyBpmAndRebuild() {
+        updateBpmInfo();
+        if (currentMidi) rebuildMappedFromMode();
+      }
+      applyBpmBtn.addEventListener("click", applyBpmAndRebuild);
+      bpmInput.addEventListener("change", applyBpmAndRebuild);
+      bpmInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") applyBpmAndRebuild();
+      });
+      // ===== Keyboard shortcuts =====
+      window.addEventListener("keydown", (e) => {
+        if (
+          e.target &&
+          (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
+        )
+          return;
+        if (e.code === "Space") {
+          e.preventDefault();
+          if (!playBtn.disabled) playBtn.click();
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          stepSelection(-1);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          stepSelection(1);
+        } else if (e.key === "Escape") {
+          selectedIndex = -1;
+          tlSelectedEl.textContent = "None";
+          renderTimeline();
+        }
+      });
+      // Init
+      refreshModeUi();
+      renderInstrumentList();
+      updateBpmInfo();
+      rebuildMappedFromMode();
     </script>
-</body>
+  </body>
 </html>
