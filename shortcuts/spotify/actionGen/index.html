@@ -42,6 +42,7 @@ textarea{width:100%;height:250px;margin-top:1em;padding:.5em;border:1px solid #3
 
 <textarea style='display:none;' id="output" placeholder="Generated JSON appears here..."></textarea>
 
+<script src="./intent-bundle.js"></script>
 <script>
 // ---------- Embedded donor (Liked Songs) ----------
 const donor={
@@ -49,7 +50,7 @@ const donor={
   "WFWorkflowActionParameters": {
     "IntentData": {
       "__type__": "data",
-      "__value__": "YnBsaXN0MDDUAAEAAgADAAQABQAGAAcAClgkdmVyc2lvblkkYXJjaGl2ZXJUJHRvcFgkb2JqZWN0cxIAAYagXxAPTlNLZXllZEFyY2hpdmVy0QAIAAlUcm9vdIABrxA+AAsADAAjACQAKAAwAEgATABNAFAAVABVAFoAWwBhAGIAaABtAHIAdwB8AIwAjQCOAJQAlQCWAJoAngCnAKgAqQCtALYAtwC4ALwAxQDGAMoA0wDUANUA1gDaAOMA5ADlAOkA8gDzAPQA+AEBAQIBAwEHARABEQESARYBGVUkbnVsbNsADQAOAA8AEAARABIAEwAUABUAFgAXABgAGQAaABgAHAAdAB4AGAAYACEAIl8QEGRvbmF0aW9uTWV0YWRhdGFfEB1fc2hvdWxkRm9yd2FyZFRvQXBwT25TdWNjY2Vzc1YkY2xhc3NfEA9yZWNvcmREZXZpY2VVSURcYmFja2luZ1N0b3JlWmlkZW50aWZpZXJfEBVwYXJhbWV0ZXJDb21iaW5hdGlvbnNbcmVjb3JkUm91dGVfEBZyZWNvcmREZXZpY2VJZGVudGlmaWVyXV9pbmRleGluZ0hhc2heYXVkaW9TZXNzaW9uSUSAAAiAPYAAgAOAAoAFgACAABAAEgAG0AVfECRCMTQ5NUEwRC1ENzk1LTRBMDItODAzMi1FMzkxMzVBNTYyMTbSACUADwAmACdVYnl0ZXNPEQcACliCAQRQbGF5aAFYAhIleC1hcHBsZS1zaXJpLWFwcDovL2NvbS5zcG90aWZ5LmNsaWVudCokNkZDMDFDQjYtRkEzMS00NzEyLUEzNkEtMTkyMTdEMUY5RkNBEqMNKlEhAAAAAACAZkBAADgCEjlodHRwczovL21pc2Muc3BvdGlmeWNkbi5jb20vc3RhdGljL2ltYWdlcy9saWtlZC1zb25ncy5wbmcZAAAAAACAZkASuQxzcG90aWZ5OnBsYXktY29tbWFuZDpleUpoWTNScGIyNGlPaUp6Y0c5MGFXWjVPbTVzT2tOQlFWTkZTMUo1VkhKd1EzZ3dNazF1VVZ3dk4zbFhTV0pyVFUxaFJVUkZNMDl0Um5WaU1qVTFZbGRzTmxwWFVUWk9hbGxuUVU5QlJFRXJaMFF4WlRaTGMyUjNlRGhCVFdnaUxDSmpiMjUwWlhoMElqcDdJbTFsZEdGa1lYUmhJanA3SW1GMWRHOXdiR0Y1WDJOaGJtUnBaR0YwWlNJNkluUnlkV1VpZlN3aWRYSnBJam9pYzNCdmRHbG1lVHAxYzJWeU9pVTBNRHBqYjJ4c1pXTjBhVzl1SWl3aWRYSnNJam9pWTI5dWRHVjRkRHBjTDF3dmMzQnZkR2xtZVRwMWMyVnlPaVUwTURwamIyeHNaV04wYVc5dUluMHNJbVpsWldSaVlXTnJYMlJsZEdGcGJITWlPbnNpWVhKMGQyOXlheUk2VzNzaWFHVnBaMmgwSWpvMk1EQXNJblZ5YkNJNkltaDBkSEJ6T2x3dlhDOXRhWE5qTG5Od2IzUnBabmxqWkc0dVkyOXRYQzl6ZEdGMGFXTmNMMmx0WVdkbGMxd3ZiR2xyWldRdGMyOXVaM011Y0c1bklpd2lkMmxrZEdnaU9qWXdNSDFkTENKbGJuUnBkSGxmZEhsd1pTSTZJblJ5WVdOcklpd2lhR0Z6WDNSeVlXTnJjeUk2ZEhKMVpTd2lkSEpoWTJ0ZmJtRnRaU0k2SWxsdmRYSWdUR2xyWldRZ1UyOXVaM01pTENKMWNta2lPaUp6Y0c5MGFXWjVPblZ6WlhJNllXNXZibmx0YVhwbFpEcGpiMnhzWldOMGFXOXVJbjBzSW1abFpXUmlZV05yWDJsa0lqb2lVRXhCV1Y5TldWUlNRVU5MVXlJc0ltbHVkR1Z1ZENJNklsQk1RVmtpTENKd1pYSm1iM0p0WVc1alpWOXRaV0Z6ZFhKbGJXVnVkSE1pT25zaVpXNTBjbmxmWVhCd1gyVjRkR1Z1YzJsdmJpSTZNalk0TkRZNU1EUXhOREl5TENKbGVHbDBYMkZ3Y0Y5bGVIUmxibk5wYjI0aU9qSTJPRFEyT1RNeE56TTBNU3dpY21WemIyeDJaVjl3YkdGNVgyTnZiblJsZUhSZmNtVnhkV1Z6ZEY5bWFXNXBjMmhsWkNJNk1qWTRORFk1TXpFMU56RTBMQ0p5WlhOdmJIWmxYM0JzWVhsZlkyOXVkR1Y0ZEY5eVpYRjFaWE4wWDNOMFlYSjBaV1FpT2pJMk9EUTJPVEEwTVRnNU1IMHNJbkJzWVhsZmIzQjBhVzl1Y3lJNmV5SmhiSGRoZVhOZmNHeGhlVjl6YjIxbGRHaHBibWNpT25SeWRXVXNJbWx1YVhScFlXeHNlVjl3WVhWelpXUWlPbVpoYkhObExDSndiR0Y1WW1GamExOXBaQ0k2SW1ObU1UZ3pOVFU1TkdJMk56UmtObVk1TUdGaU1EWTBOekUyTW1JeU1qQTVJaXdpY0d4aGVXVnlYMjl3ZEdsdmJuTmZiM1psY25KcFpHVWlPbnNpY21Wd1pXRjBhVzVuWDJOdmJuUmxlSFFpT21aaGJITmxMQ0p5WlhCbFlYUnBibWRmZEhKaFkyc2lPbVpoYkhObExDSnphSFZtWm14cGJtZGZZMjl1ZEdWNGRDSTZkSEoxWlgwc0luTmxjM05wYjI1ZmFXUWlPaUpoTkRjeU5HVmlZUzAwTW1NM0xUUmtPR010T1dRd1ppMW1ZbU01TmpJeFlqa3dZek1pTENKemRYQndjbVZ6YzJsdmJuTWlPbnQ5ZlN3aWNHeGhlVjl2Y21sbmFXNGlPbnNpWm1WaGRIVnlaVjlwWkdWdWRHbG1hV1Z5SWpvaWRtOXBZMlV0WVhOemFYTjBZVzUwTFhOcGNta2lMQ0p5WldabGNuSmxjbDlwWkdWdWRHbG1hV1Z5SWpvaWRtOXBZMlVpZlN3aWNtVnhYMmxrSWpvaVlUUTNNalJsWW1FdE5ESmpOeTAwWkRoakxUbGtNR1l0Wm1Kak9UWXlNV0k1TUdNeklpd2ljbVZ6ZFd4MElqb2lVMVZEUTBWVFV5SjkaEFlvdXIgTGlrZWQgU29uZ3MgAYAE0gApACoAKwAsWiRjbGFzc25hbWVYJGNsYXNzZXNfEBRfSU5QQlBsYXlNZWRpYUludGVudKMALQAuAC9fEBRfSU5QQlBsYXlNZWRpYUludGVudFlQQkNvZGFibGVYTlNPYmplY3TTADEAMgAPADMAPQBHV05TLmtleXNaTlMub2JqZWN0c6kANAA1ADYANwA4ADkAOgA7ADyABoAJgAuADYAPgBCAEYASgBOpAD4APwBAAEEAQgBDAEQARQBGgBSAHIAggCSAJ4AsgDCANIA4gDzSADIADwBJAEuhAEqAB4AIWm1lZGlhSXRlbXPSACkAKgBOAE9VTlNTZXSiAE4AL9IAMgAPAFEAS6EAUoAKgAhebWVkaWFDb250YWluZXLSADIADwBWAEuiAFIAWIAKgAyACF5yZXN1bWVQbGF5YmFja9IAMgAPAFwAS6MASgBeAFKAB4AOgAqACFxwbGF5U2h1ZmZsZWTSADIA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"
+      "__value__": ""
     },
     "ForceExecutionOnPhone": false,
     "UUID": "A4325B61-5876-4B28-9D4B-1E5D6EF05179",
@@ -58,22 +59,26 @@ const donor={
 };
 
 // ---------- Utility helpers ----------
-const enc=new TextEncoder(),dec=new TextDecoder();
-const b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-const b64e=b=>btoa(Array.from(b,d=>String.fromCharCode(d)).join(""));
-
-function parseSpotifyLink(u){
-  u=u.trim();
-  if(!u)return null;
-  if(u.startsWith("spotify:")){
-    const p=u.split(":");
-    return{type:p[1],id:p[2]};
+function parseSpotifyLink(value) {
+  value = String(value || '').trim();
+  if (!value) return null;
+  let type = document.getElementById('type').value;
+  let id = value;
+  if (value.startsWith('spotify:')) {
+    const parts = value.split(':');
+    if (parts.length !== 3) return null;
+    [, type, id] = parts;
+  } else if (/^https?:/i.test(value)) {
+    try {
+      const url = new URL(value);
+      if (url.protocol !== 'https:' || url.hostname !== 'open.spotify.com' || url.username || url.password) return null;
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts[0]?.startsWith('intl-')) parts.shift();
+      if (parts.length !== 2) return null;
+      [type, id] = parts;
+    } catch (_) { return null; }
   }
-  if(u.includes("open.spotify.com")){
-    const p=u.split("/");
-    return{type:p[3],id:p[4].split("?")[0]};
-  }
-  return{type:document.getElementById("type").value,id:u};
+  return ['playlist', 'track', 'album'].includes(type) && /^[A-Za-z0-9]{22}$/.test(id) ? { type, id } : null;
 }
 
 function buildAction(){
@@ -90,52 +95,13 @@ function buildAction(){
   let obj=structuredClone(donor);
   obj.WFWorkflowActionParameters.ShowWhenRun=show;
 
-  let outer=b64d(obj.WFWorkflowActionParameters.IntentData.__value__);
-  const anchor=enc.encode("spotify:play-command:");
-  const aIdx=outer.findIndex((_,i)=>anchor.every((v,j)=>outer[i+j]===v));
-  const s=aIdx+anchor.length;let e=s;
-  while(/[A-Za-z0-9+/=]/.test(String.fromCharCode(outer[e])))e++;
-  let innerB64=dec.decode(outer.slice(s,e));
-  const L0=innerB64.length;
-  let inner=JSON.parse(atob(innerB64));
-
-  inner.context.uri=uri;
-  inner.context.url="context://"+uri;
-  inner.feedback_details.uri=uri;
-  inner.feedback_details.playlist_name=title;
-  delete inner.feedback_details.artwork;
-  const po=inner.play_options?.player_options_override||{};
-  po.shuffling_context=shuffle;
-  po.repeating_context=repeat;
-  inner.play_options={player_options_override:po};
-
-  // pad inner Base64
-  function encB64(x){return btoa(JSON.stringify(x))}
-  inner.feedback_details._=inner.feedback_details._||"";
-  let newB64=encB64(inner);
-  while(newB64.length<L0){inner.feedback_details._+="x";newB64=encB64(inner);}
-  if(newB64.length>L0){
-    inner.feedback_details._=inner.feedback_details._.slice(0,
-      Math.max(0,inner.feedback_details._.length-(newB64.length-L0)));
-    newB64=encB64(inner);
+  try {
+    if (!window.SpotifyIntent) throw new Error('Intent serializer did not load. Reload and try again.');
+    obj.WFWorkflowActionParameters.IntentData.__value__ = window.SpotifyIntent.build({ uri, title, shuffle, repeat });
+  } catch (error) {
+    alert(error.message || 'Unable to build the Spotify action.');
+    return;
   }
-
-  // replace inner Base64
-  outer.set(enc.encode(newB64),s);
-
-  // --- Patch visible title label (keep same byte length) ---
-  const titleBytes=enc.encode(title);
-  const donorTitle=enc.encode("Liked Songs");
-  const tIdx=outer.findIndex((_,i)=>donorTitle.every((v,j)=>outer[i+j]===v));
-  if(tIdx!==-1){
-    const targetLen=donorTitle.length;
-    const newTitle=titleBytes.length>targetLen
-      ? titleBytes.slice(0,targetLen)
-      : new Uint8Array([...titleBytes,...Array(targetLen-titleBytes.length).fill(0x20)]);
-    outer.set(newTitle,tIdx);
-  }
-
-  obj.WFWorkflowActionParameters.IntentData.__value__=b64e(outer);
 
   const out=JSON.stringify(obj,null,2);
   document.getElementById("output").value=out;
