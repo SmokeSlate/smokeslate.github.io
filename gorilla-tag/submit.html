@@ -93,43 +93,38 @@
   const form = document.getElementById('mapForm');
   const messageDiv = document.getElementById('message');
 
-  form.addEventListener('submit', function(event) {
+  let submitting = false;
+  form.addEventListener('submit', async function(event) {
     event.preventDefault();
-
+    if (submitting) return;
+    const button = form.querySelector('button[type="submit"]');
     const formData = {
       title: document.getElementById('title').value,
       author: document.getElementById('author').value,
       link: document.getElementById('link').value
     };
-
-    fetch('https://script.google.com/macros/s/AKfycbz-iNzGiAdAmrt2c7-ftSkAUavng58uO7zEptWfFu8pcSw0Vilz29jDcHtZOVXW1xMf/exec', {
-      method: 'POST',
-      body: JSON.stringify(formData),
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      redirect:"follow",
-      mode:"no-cors",
-  })
-    .then(response => {
-      window.status = response.redirect.status
-      response.json();
-    })
-    .then(data => {
-      if (window.status === '200') {
-        messageDiv.innerHTML = 'Map submitted successfully!';
-        form.reset();
-      } else {
-        messageDiv.innerHTML = 'There was a problem with your submission.';
-      }
-      console.log(window.status)
-    })
-    .catch(error => {
-      console.error('Error:', error);
+    submitting = true;
+    button.disabled = true;
+    messageDiv.textContent = 'Submitting map...';
+    try {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbz-iNzGiAdAmrt2c7-ftSkAUavng58uO7zEptWfFu8pcSw0Vilz29jDcHtZOVXW1xMf/exec', {
+        method: 'POST', body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        redirect: 'follow', mode: 'cors'
+      });
+      if (response.type === 'opaque' || !response.ok) throw new Error('The server did not confirm submission.');
+      const data = await response.json();
+      if (data?.success !== true) throw new Error(data?.message || 'The server did not confirm submission.');
+      messageDiv.textContent = 'Map submitted successfully!';
       form.reset();
-      messageDiv.innerHTML = '';
-    });
+    } catch (error) {
+      messageDiv.textContent = 'Unable to confirm submission. Your entries have been kept. Check with the site owner before retrying.';
+    } finally {
+      submitting = false;
+      button.disabled = false;
+    }
   });
+
 </script>
 
 </body>
