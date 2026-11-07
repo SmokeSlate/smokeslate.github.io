@@ -1,0 +1,595 @@
+{
+  "$version": 100000,
+  "$archiver": "NSKeyedArchiver",
+  "$top": {
+    "root": {
+      "__uid": 1
+    }
+  },
+  "$objects": [
+    "$null",
+    {
+      "donationMetadata": {
+        "__uid": 0
+      },
+      "_shouldForwardToAppOnSucccess": false,
+      "$class": {
+        "__uid": 61
+      },
+      "recordDeviceUID": {
+        "__uid": 0
+      },
+      "backingStore": {
+        "__uid": 3
+      },
+      "identifier": {
+        "__uid": 2
+      },
+      "parameterCombinations": {
+        "__uid": 5
+      },
+      "recordRoute": {
+        "__uid": 0
+      },
+      "recordDeviceIdentifier": {
+        "__uid": 0
+      },
+      "_indexingHash": 0,
+      "audioSessionID": 446469
+    },
+    "B1495A0D-D795-4A02-8032-E39135A56216",
+    {
+      "bytes": {
+        "__data": "CliCAQRQbGF5aAFYAhIleC1hcHBsZS1zaXJpLWFwcDovL2NvbS5zcG90aWZ5LmNsaWVudCokNkZDMDFDQjYtRkEzMS00NzEyLUEzNkEtMTkyMTdEMUY5RkNBEqMNKlEhAAAAAACAZkBAADgCEjlodHRwczovL21pc2Muc3BvdGlmeWNkbi5jb20vc3RhdGljL2ltYWdlcy9saWtlZC1zb25ncy5wbmcZAAAAAACAZkASuQxzcG90aWZ5OnBsYXktY29tbWFuZDpleUpoWTNScGIyNGlPaUp6Y0c5MGFXWjVPbTVzT2tOQlFWTkZTMUo1VkhKd1EzZ3dNazF1VVZ3dk4zbFhTV0pyVFUxaFJVUkZNMDl0Um5WaU1qVTFZbGRzTmxwWFVUWk9hbGxuUVU5QlJFRXJaMFF4WlRaTGMyUjNlRGhCVFdnaUxDSmpiMjUwWlhoMElqcDdJbTFsZEdGa1lYUmhJanA3SW1GMWRHOXdiR0Y1WDJOaGJtUnBaR0YwWlNJNkluUnlkV1VpZlN3aWRYSnBJam9pYzNCdmRHbG1lVHAxYzJWeU9pVTBNRHBqYjJ4c1pXTjBhVzl1SWl3aWRYSnNJam9pWTI5dWRHVjRkRHBjTDF3dmMzQnZkR2xtZVRwMWMyVnlPaVUwTURwamIyeHNaV04wYVc5dUluMHNJbVpsWldSaVlXTnJYMlJsZEdGcGJITWlPbnNpWVhKMGQyOXlheUk2VzNzaWFHVnBaMmgwSWpvMk1EQXNJblZ5YkNJNkltaDBkSEJ6T2x3dlhDOXRhWE5qTG5Od2IzUnBabmxqWkc0dVkyOXRYQzl6ZEdGMGFXTmNMMmx0WVdkbGMxd3ZiR2xyWldRdGMyOXVaM011Y0c1bklpd2lkMmxrZEdnaU9qWXdNSDFkTENKbGJuUnBkSGxmZEhsd1pTSTZJblJ5WVdOcklpd2lhR0Z6WDNSeVlXTnJjeUk2ZEhKMVpTd2lkSEpoWTJ0ZmJtRnRaU0k2SWxsdmRYSWdUR2xyWldRZ1UyOXVaM01pTENKMWNta2lPaUp6Y0c5MGFXWjVPblZ6WlhJNllXNXZibmx0YVhwbFpEcGpiMnhzWldOMGFXOXVJbjBzSW1abFpXUmlZV05yWDJsa0lqb2lVRXhCV1Y5TldWUlNRVU5MVXlJc0ltbHVkR1Z1ZENJNklsQk1RVmtpTENKd1pYSm1iM0p0WVc1alpWOXRaV0Z6ZFhKbGJXVnVkSE1pT25zaVpXNTBjbmxmWVhCd1gyVjRkR1Z1YzJsdmJpSTZNalk0TkRZNU1EUXhOREl5TENKbGVHbDBYMkZ3Y0Y5bGVIUmxibk5wYjI0aU9qSTJPRFEyT1RNeE56TTBNU3dpY21WemIyeDJaVjl3YkdGNVgyTnZiblJsZUhSZmNtVnhkV1Z6ZEY5bWFXNXBjMmhsWkNJNk1qWTRORFk1TXpFMU56RTBMQ0p5WlhOdmJIWmxYM0JzWVhsZlkyOXVkR1Y0ZEY5eVpYRjFaWE4wWDNOMFlYSjBaV1FpT2pJMk9EUTJPVEEwTVRnNU1IMHNJbkJzWVhsZmIzQjBhVzl1Y3lJNmV5SmhiSGRoZVhOZmNHeGhlVjl6YjIxbGRHaHBibWNpT25SeWRXVXNJbWx1YVhScFlXeHNlVjl3WVhWelpXUWlPbVpoYkhObExDSndiR0Y1WW1GamExOXBaQ0k2SW1ObU1UZ3pOVFU1TkdJMk56UmtObVk1TUdGaU1EWTBOekUyTW1JeU1qQTVJaXdpY0d4aGVXVnlYMjl3ZEdsdmJuTmZiM1psY25KcFpHVWlPbnNpY21Wd1pXRjBhVzVuWDJOdmJuUmxlSFFpT21aaGJITmxMQ0p5WlhCbFlYUnBibWRmZEhKaFkyc2lPbVpoYkhObExDSnphSFZtWm14cGJtZGZZMjl1ZEdWNGRDSTZkSEoxWlgwc0luTmxjM05wYjI1ZmFXUWlPaUpoTkRjeU5HVmlZUzAwTW1NM0xUUmtPR010T1dRd1ppMW1ZbU01TmpJeFlqa3dZek1pTENKemRYQndjbVZ6YzJsdmJuTWlPbnQ5ZlN3aWNHeGhlVjl2Y21sbmFXNGlPbnNpWm1WaGRIVnlaVjlwWkdWdWRHbG1hV1Z5SWpvaWRtOXBZMlV0WVhOemFYTjBZVzUwTFhOcGNta2lMQ0p5WldabGNuSmxjbDlwWkdWdWRHbG1hV1Z5SWpvaWRtOXBZMlVpZlN3aWNtVnhYMmxrSWpvaVlUUTNNalJsWW1FdE5ESmpOeTAwWkRoakxUbGtNR1l0Wm1Kak9UWXlNV0k1TUdNeklpd2ljbVZ6ZFd4MElqb2lVMVZEUTBWVFV5SjkaEFlvdXIgTGlrZWQgU29uZ3MgAQ=="
+      },
+      "$class": {
+        "__uid": 4
+      }
+    },
+    {
+      "$classname": "_INPBPlayMediaIntent",
+      "$classes": [
+        "_INPBPlayMediaIntent",
+        "PBCodable",
+        "NSObject"
+      ]
+    },
+    {
+      "NS.keys": [
+        {
+          "__uid": 6
+        },
+        {
+          "__uid": 9
+        },
+        {
+          "__uid": 11
+        },
+        {
+          "__uid": 13
+        },
+        {
+          "__uid": 15
+        },
+        {
+          "__uid": 16
+        },
+        {
+          "__uid": 17
+        },
+        {
+          "__uid": 18
+        },
+        {
+          "__uid": 19
+        }
+      ],
+      "NS.objects": [
+        {
+          "__uid": 20
+        },
+        {
+          "__uid": 28
+        },
+        {
+          "__uid": 32
+        },
+        {
+          "__uid": 36
+        },
+        {
+          "__uid": 39
+        },
+        {
+          "__uid": 44
+        },
+        {
+          "__uid": 48
+        },
+        {
+          "__uid": 52
+        },
+        {
+          "__uid": 56
+        }
+      ],
+      "$class": {
+        "__uid": 60
+      }
+    },
+    {
+      "NS.objects": [
+        {
+          "__uid": 7
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    "mediaItems",
+    {
+      "$classname": "NSSet",
+      "$classes": [
+        "NSSet",
+        "NSObject"
+      ]
+    },
+    {
+      "NS.objects": [
+        {
+          "__uid": 10
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    "mediaContainer",
+    {
+      "NS.objects": [
+        {
+          "__uid": 10
+        },
+        {
+          "__uid": 12
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    "resumePlayback",
+    {
+      "NS.objects": [
+        {
+          "__uid": 7
+        },
+        {
+          "__uid": 14
+        },
+        {
+          "__uid": 10
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    "playShuffled",
+    {
+      "NS.objects": [
+        {
+          "__uid": 7
+        },
+        {
+          "__uid": 10
+        },
+        {
+          "__uid": 12
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    {
+      "NS.objects": [
+        {
+          "__uid": 7
+        },
+        {
+          "__uid": 14
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    {
+      "NS.objects": [
+        {
+          "__uid": 10
+        },
+        {
+          "__uid": 14
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    {
+      "NS.objects": [
+        {
+          "__uid": 7
+        },
+        {
+          "__uid": 10
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    {
+      "NS.objects": [
+        {
+          "__uid": 7
+        },
+        {
+          "__uid": 12
+        }
+      ],
+      "$class": {
+        "__uid": 8
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 23
+      },
+      "titleFormatString": {
+        "__uid": 21
+      },
+      "subtitleFormatString": {
+        "__uid": 0
+      },
+      "titleFormatStringLocID": {
+        "__uid": 22
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 0
+      }
+    },
+    "Play ${mediaItems}",
+    "KcCcQu",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    "com.spotify.client",
+    "Intents",
+    {
+      "$classname": "INCodableLocalizationTable",
+      "$classes": [
+        "INCodableLocalizationTable",
+        "NSObject"
+      ]
+    },
+    {
+      "$classname": "INParameterCombination",
+      "$classes": [
+        "INParameterCombination",
+        "NSObject"
+      ]
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 31
+      },
+      "titleFormatString": {
+        "__uid": 29
+      },
+      "subtitleFormatString": {
+        "__uid": 0
+      },
+      "titleFormatStringLocID": {
+        "__uid": 30
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 0
+      }
+    },
+    "Play ${mediaContainer}",
+    "YYfsKp",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 35
+      },
+      "titleFormatString": {
+        "__uid": 33
+      },
+      "subtitleFormatString": {
+        "__uid": 0
+      },
+      "titleFormatStringLocID": {
+        "__uid": 34
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 0
+      }
+    },
+    "Resume ${mediaContainer}",
+    "sLPQxZ",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 38
+      },
+      "titleFormatString": {
+        "__uid": 29
+      },
+      "subtitleFormatString": {
+        "__uid": 0
+      },
+      "titleFormatStringLocID": {
+        "__uid": 37
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 0
+      }
+    },
+    "nNozW1",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 43
+      },
+      "titleFormatString": {
+        "__uid": 33
+      },
+      "subtitleFormatString": {
+        "__uid": 41
+      },
+      "titleFormatStringLocID": {
+        "__uid": 40
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 42
+      }
+    },
+    "o6CuZu",
+    "${mediaItems}",
+    "vUAqfM",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 47
+      },
+      "titleFormatString": {
+        "__uid": 45
+      },
+      "subtitleFormatString": {
+        "__uid": 0
+      },
+      "titleFormatStringLocID": {
+        "__uid": 46
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 0
+      }
+    },
+    "Shuffle ${mediaItems}",
+    "MbU5ep",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 51
+      },
+      "titleFormatString": {
+        "__uid": 49
+      },
+      "subtitleFormatString": {
+        "__uid": 0
+      },
+      "titleFormatStringLocID": {
+        "__uid": 50
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 0
+      }
+    },
+    "Shuffle ${mediaContainer}",
+    "nAv25k",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 55
+      },
+      "titleFormatString": {
+        "__uid": 29
+      },
+      "subtitleFormatString": {
+        "__uid": 41
+      },
+      "titleFormatStringLocID": {
+        "__uid": 53
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 54
+      }
+    },
+    "WEjMGd",
+    "ApUiZd",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$class": {
+        "__uid": 27
+      },
+      "primary": false,
+      "_localizationTable": {
+        "__uid": 59
+      },
+      "titleFormatString": {
+        "__uid": 57
+      },
+      "subtitleFormatString": {
+        "__uid": 0
+      },
+      "titleFormatStringLocID": {
+        "__uid": 58
+      },
+      "supportsBackgroundExecution": true,
+      "subtitleFormatStringLocID": {
+        "__uid": 0
+      }
+    },
+    "Resume ${mediaItems}",
+    "mIvv3D",
+    {
+      "$class": {
+        "__uid": 26
+      },
+      "bundleIdentifier": {
+        "__uid": 24
+      },
+      "tableName": {
+        "__uid": 25
+      }
+    },
+    {
+      "$classname": "NSDictionary",
+      "$classes": [
+        "NSDictionary",
+        "NSObject"
+      ]
+    },
+    {
+      "$classname": "INPlayMediaIntent",
+      "$classes": [
+        "INPlayMediaIntent",
+        "INIntent",
+        "NSObject"
+      ]
+    }
+  ]
+}
