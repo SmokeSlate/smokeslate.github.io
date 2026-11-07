@@ -71,14 +71,12 @@
   document.addEventListener('DOMContentLoaded', function() {
   fetch('https://script.google.com/macros/s/AKfycbz-iNzGiAdAmrt2c7-ftSkAUavng58uO7zEptWfFu8pcSw0Vilz29jDcHtZOVXW1xMf/exec')
     .then(response => {
-      console.log('Raw Response:', response); // Log raw response
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       return response.text(); // Change this to text to inspect raw output
     })
     .then(text => {
-      console.log('Raw Response Text:', text); // Log the raw text
       const data = JSON.parse(text); // Manually parse the text into JSON
       const mapList = document.getElementById('mapList');
 
@@ -86,12 +84,22 @@
         const mapItem = document.createElement('li');
         mapItem.className = 'map-item';
 
-        mapItem.innerHTML = `
-          <h3>${map.title}</h3>
-          <p><strong>Author:</strong> ${map.author}</p>
-          <p><a href="${map.link}" target="_blank">View on Mod.io</a></p>
-          <p><small>Submitted on: ${new Date(map.submissionDate).toLocaleDateString()}</small></p>
-        `;
+        const title = document.createElement('h3');
+        title.textContent = map.title || 'Untitled map';
+        const author = document.createElement('p');
+        author.textContent = 'Author: ' + (map.author || 'Unknown');
+        const linkRow = document.createElement('p');
+        try {
+          const url = new URL(map.link);
+          if (url.protocol !== 'https:' || url.username || url.password || !(url.hostname === 'mod.io' || url.hostname.endsWith('.mod.io'))) throw new Error('Invalid map link');
+          const link = document.createElement('a');
+          link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+          link.textContent = 'View on Mod.io'; linkRow.appendChild(link);
+        } catch (_) { linkRow.textContent = 'Map link unavailable'; }
+        const date = document.createElement('small');
+        const submitted = new Date(map.submissionDate);
+        date.textContent = 'Submitted on: ' + (Number.isNaN(submitted.getTime()) ? 'Unknown date' : submitted.toLocaleDateString());
+        mapItem.append(title, author, linkRow, date);
 
         mapList.appendChild(mapItem);
       });
