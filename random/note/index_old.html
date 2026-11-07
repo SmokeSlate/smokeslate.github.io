@@ -322,29 +322,28 @@
             let closestNote = null;
             let closestDistance = Infinity;
 
-            notesWithLabels.forEach(({ note, label }) => {
+            notesWithLabels.forEach(({ note, name }) => {
                 let distance = calculateDistance(note, inputNote);
                 if (distance < closestDistance) {
                     closestDistance = distance;
-                    closestNote = { note, label };
+                    closestNote = { note, name };
                 }
             });
 
             return closestNote 
-                ? `${closestNote.label} - ${closestNote.note}`
+                ? `${closestNote.name} - ${closestNote.note}`
                 : "No close match found";
         }
 
         // Function to calculate a basic "distance" between two notes
+        function notePitch(note) {
+            const match = /^([A-G])([#b]?)([0-8])$/.exec(note);
+            if (!match) return NaN;
+            const semitones = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+            return (Number(match[3]) + 1) * 12 + semitones[match[1]] + (match[2] === '#' ? 1 : match[2] === 'b' ? -1 : 0);
+        }
         function calculateDistance(note1, note2) {
-            let distance = 0;
-            for (let i = 0; i < Math.min(note1.length, note2.length); i++) {
-                if (note1[i] !== note2[i]) {
-                    distance++;
-                }
-            }
-            distance += Math.abs(note1.length - note2.length);
-            return distance;
+            return Math.abs(notePitch(note1) - notePitch(note2));
         }
 
         // Get the query parameter from the URL
