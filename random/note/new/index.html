@@ -372,6 +372,7 @@
     });
 
     function processTrack(track) {
+      stopAllAudio();
       outputDiv.innerHTML = '';
       currentMappedNotes = [];
       if (!track) return;
@@ -452,6 +453,13 @@
       previewTimeouts = [];
       previewPlaying = false;
       previewBtn.textContent = 'Preview Track';
+    }
+
+    function stopAllAudio() {
+      stopAllScheduled();
+      stopPreview();
+      playing = false;
+      playBtn.textContent = 'Play';
     }
 
     // Playback mapping sequence
@@ -564,11 +572,7 @@
       playBtn.disabled = true;
       exportBtn.disabled = true;
       clearBtn.disabled = true;
-      if (playing) {
-        stopAllScheduled();
-        playing = false;
-        playBtn.textContent = 'Play';
-      }
+      stopAllAudio();
     });
 
     // Initialize BPM info with default

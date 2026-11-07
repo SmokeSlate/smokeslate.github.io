@@ -790,7 +790,7 @@
           i.id === id ? { ...i, name: name || i.name } : i
         );
         if (trackMode.value === "instruments" && currentMappedNotes.length) {
-          renderTimeline();
+          rebuildMappedFromMode();
         }
       }
       function syncInstrumentsToTracks() {
@@ -881,13 +881,11 @@
         }
         // compute delaySpaces between groups
         const mapped = [];
-        let lastTime = 0;
+        let lastPosition = 0;
         for (const g of groups) {
-          const delaySpaces = Math.max(
-            0,
-            Math.round(((g.absTime - lastTime) * 1000) / spaceMs)
-          );
-          lastTime = g.absTime;
+          const position = Math.max(0, Math.round((g.absTime * 1000) / spaceMs));
+          const delaySpaces = position - lastPosition;
+          lastPosition = position;
           // Build display info: for group we gather note names, colours, etc.
           const mappedGroup = {
             absTime: g.absTime,
@@ -953,6 +951,16 @@
         const step = usable / (lanes - 1);
         return topPad + laneIndex * step;
       }
+      function holdSeconds(note) {
+        return Math.max(0.1, ((note.holdSpaces || 0) * (60000 / getBpm() / 4)) / 1000);
+      }
+      function mappedEndTime(startIndex = 0) {
+        return currentMappedNotes.reduce((end, group, index) => {
+          if (index < startIndex) return end;
+          const hold = Math.max(0, ...group.notes.map(holdSeconds));
+          return Math.max(end, (mappedStartTimes[index] || 0) + hold);
+        }, 0);
+      }
       function computeMappedStartTimes() {
         const bpm = getBpm();
         const spaceMs = 60000 / bpm / 4;
@@ -962,10 +970,7 @@
           acc += (g.delaySpaces * spaceMs) / 1000;
           mappedStartTimes.push(acc);
         }
-        mappedDuration = mappedStartTimes.length
-          ? mappedStartTimes[mappedStartTimes.length - 1]
-          : 0.001;
-        if (mappedDuration < 0.001) mappedDuration = 0.001;
+        mappedDuration = Math.max(0.001, mappedEndTime());
         zoom = clamp(zoom, 1, 20);
         windowDuration = mappedDuration / zoom;
         if (windowDuration < 0.001) windowDuration = 0.001;
@@ -1278,7 +1283,9 @@
       }
       function stopAllAudio() {
         stopAllScheduled();
-        if (previewPlaying) stopPreview();
+        stopPreview();
+        playing = false;
+        playBtn.textContent = "Play";
       }
       function ensureAudio() {
         if (!audioCtx)
@@ -1345,10 +1352,7 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             // compute hold duration based on holdSpaces and BPM
-            const holdSecs = Math.max(
-              0.1,
-              ((note.holdSpaces || 0) * spaceMs) / 1000
-            );
+            const holdSecs = holdSeconds(note);
             gain.gain.setValueAtTime(0.26, when);
             gain.gain.exponentialRampToValueAtTime(0.0001, when + holdSecs);
             osc.start(when);
@@ -1356,16 +1360,7 @@
             scheduledOscs.push({ osc, gain });
           });
         }
-        // compute total duration including holds for each group
-        const totalSec =
-          currentMappedNotes.slice(startIdx).reduce((sum, g) => {
-            const maxHoldSpaces = g.notes.reduce(
-              (mh, n) => Math.max(mh, n.holdSpaces || 0),
-              0
-            );
-            const holdSecs = (maxHoldSpaces * spaceMs) / 1000;
-            return sum + (g.delaySpaces * spaceMs) / 1000 + holdSecs;
-          }, 0) + 0.5;
+        const totalSec = Math.max(0, mappedEndTime(startIdx) - startOffsetSec) + 0.5;
         startPlayheadAnimation(startTime, startOffsetSec);
         const tid = setTimeout(() => {
           stopAllScheduled();
